@@ -10,7 +10,4 @@ module "networking_dr" {
   providers = {
     aws = aws.london
   }
-
-  # We pass this to logic-gate expensive resources
-  is_dr_region = true 
 }
