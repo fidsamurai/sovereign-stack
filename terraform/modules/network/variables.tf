@@ -1,4 +1,4 @@
-variable "prod_env" {
+variable "env_prod" {
   type = bool
   default = true
 }
