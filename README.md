@@ -9,6 +9,18 @@
 4. Helm chart to deploy application and monitoring.
 ```
 
+### 🏗️ Architectural Summary & Trade-offs
+
+To ensure the platform meets the high-availability and security requirements of regulated industries (FinTech/MedTech), the following design choices were made:
+
+| Feature | Sovereign-Stack Choice | Why it beats the "Standard" | SRE Value |
+| :--- | :--- | :--- | :--- |
+| **Orchestration** | **Self-Hosted K8s** | Data Sovereignty & 0% EKS Management Fees | Control Plane Depth |
+| **Runtime** | **Podman (CRI-O)** | Rootless & Daemon-less Security | HIPAA Hardening |
+| **DR Strategy** | **Pilot Light** | Cross-Region Recovery at minimal standby cost | RTO/RPO Focus |
+| **Node Scaling** | **Karpenter** | Intent-based scaling (Faster than standard ASG) | Cost Optimization |
+| **Networking** | **3-Tier VPC** | Physical Database & App Tier Isolation | ISO 27001 Compliance |
+
 ### Completion Status
 
 - [-] Terraform module based template.
