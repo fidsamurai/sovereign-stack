@@ -21,3 +21,11 @@ variable "asg-cplane-max-vcpu-count" {
     type = number
     default = 4
 }
+
+variable "cplane_join_command" {
+    type = string
+}
+
+variable "workers_join_command" {
+    type = string
+}

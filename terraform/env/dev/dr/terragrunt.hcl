@@ -27,10 +27,13 @@ inputs = {
    public2_cidr_block = "192.168.4.0/24"
 
   # LT + ASG defaults
-  lt_cplane_image_id = ""
-  asg_cplane_key_name = "cplane"
-  asg_cplane_min_vcpu_count = 2
-  asg_cplane_max_vcpu_count = 4
-  asg_cplane_min_memory_mib = 4096
-  asg_cplane_max_memory_mib = 16384
+   lt_cplane_image_id = ""
+   asg_cplane_key_name = "cplane"
+   asg_cplane_min_vcpu_count = 2
+   asg_cplane_max_vcpu_count = 4
+   asg_cplane_min_memory_mib = 2048
+   asg_cplane_max_memory_mib = 4096
+
+   cplane_join_command = ""
+   workers_join_command = ""
 }

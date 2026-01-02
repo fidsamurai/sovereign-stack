@@ -60,3 +60,45 @@ resource "aws_autoscaling_group" "cplane" {
       } 
     }
 }
+
+resource "aws_key_pair" "workers" {
+  name = workers
+  public_key = file("~/.ssh/workers.pem.pub")
+}
+
+resource "aws_launch_template" "workers" {
+  name = workers
+  image_id = aws_ami.ubuntu.id
+  iam_instance_profile = var.lt_workers_iam_instance_profile
+  key_name = workers
+  vpc_security_group_ids = [aws_security_group.workers.id]
+  user_data = base64encode(file("${path.module}/cluster_join.sh"))
+}
+
+resource "aws_autoscaling_group" "workers" {
+    name = workers
+ 
+    min_size = 1
+    max_size = 3
+    desired_capacity = 1
+    vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
+
+    mixed_instances_policy {
+      launch_template {
+        id = aws_launch_template.workers.id
+        version = "$Latest"
+      }
+      override {
+        instance_requirements {
+          memory_mib {
+            min = var.asg-workers-min-memory-mib
+            max = var.asg-workers-max-memory-mib
+          }
+          vcpu_count {
+            min = var.asg-workers-min-vcpu-count
+            max = var.asg-workers-max-vcpu-count
+          }
+        }
+      } 
+    }
+}

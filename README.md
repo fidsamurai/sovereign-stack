@@ -25,14 +25,14 @@ To ensure the platform meets the high-availability and security requirements of 
 
 - [-] Terraform module based template.
   - [x] Network Module
-  - [] LT + ASG (Control plane + Workers)
+  - [-] LT + ASG (Control plane + Workers)
   - [] ALB Module 
   - [] RDS Module
   - [] S3 + CloudFront Module 
   - [] Route53 Module (With Application Recovery Controller)
 
 - [] Ansible playbook to automate the Control Plane setup.
-- [] Packer to create the AMI for the workers.
+- [x] Packer to create the AMI with Podman and K8s for the workers.
 - [] Helm chart to deploy application and monitoring.
   - [] Calico
   - [] Nginx-Ingress
@@ -53,13 +53,16 @@ To ensure the platform meets the high-availability and security requirements of 
 On local system
 1. git clone git@github.com:sovereign-stack/sovereign-stack.git
 2. cd sovereign-stack
-3. ssh-keygen -t ed25519 -C "cplane" -f ~/.ssh/cplane.pem
+3. ssh-keygen -t ed25519 -C "cplane" -f ~/.ssh/cplane.pem (Press enter twice for no passphrase)
+4. ssh-keygen -t ed25519 -C "workers" -f ~/.ssh/workers.pem (Press enter twice for no passphrase)
 4. cd terraform/env/
 5. terragrunt run-all init
 6. terragrunt run-all plan
 7. terragrunt run-all apply
 
-On AWS Jump server
+On AWS Control Plane
 8. Ansible run tag for cplane setup.
+
+On Control Plane
 9. Helm setup for the cluster. (Repeat for all other environments.)
 ```
