@@ -13,12 +13,13 @@
 
 - [-] Terraform module based template.
   - [x] Network Module
-  - [] LT + ASG + ALB Module (Cplane + Workers)
+  - [] LT + ASG (Control plane + Workers)
+  - [] ALB Module 
   - [] RDS Module
   - [] S3 + CloudFront Module 
-  - [] Route53 Module
+  - [] Route53 Module (With Application Recovery Controller)
 
-- [] Ansible playbook to automate the Cplane setup.
+- [] Ansible playbook to automate the Control Plane setup.
 - [] Packer to create the AMI for the workers.
 - [] Helm chart to deploy application and monitoring.
   - [] Calico
@@ -26,10 +27,27 @@
   - [] Cert-Manager
   - [] Karpenter
   - [] Metric Server
-  - [] API
+  - [] API (Python)
   - [] Jenkins
   - [] ArgoCD
   - [] Prometheus
   - [] Grafana
   - [] Alertmanager
   - [] Loki
+
+### Setups steps ->
+
+```
+On local system
+1. git clone git@github.com:sovereign-stack/sovereign-stack.git
+2. cd sovereign-stack
+3. ssh-keygen -t ed25519 -C "cplane" -f ~/.ssh/cplane.pem
+4. cd terraform/env/
+5. terragrunt run-all init
+6. terragrunt run-all plan
+7. terragrunt run-all apply
+
+On AWS Jump server
+8. Ansible run tag for cplane setup.
+9. Helm setup for the cluster. (Repeat for all other environments.)
+```
