@@ -16,3 +16,6 @@
 -> Security - Podman is more secure as it doesn't require root access.
 -> Ease - SystemD integration is easier.
 -> Zero overhead as there's no daemon running in the background.
+
+`Installing the ALB controller via terraform helm chart`
+-> Maintains a state for the controller itself in case we destroy the cluster and want to reapply it.

@@ -22,10 +22,10 @@ variable "asg-cplane-max-vcpu-count" {
     default = 4
 }
 
-variable "cplane_join_command" {
+variable "token" {
     type = string
 }
 
-variable "workers_join_command" {
+variable "discovery_sha" {
     type = string
 }

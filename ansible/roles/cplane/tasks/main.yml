@@ -1,0 +1,38 @@
+tasks:
+  - name: Install Podman
+    become: yes
+    apt:
+      update_cache: yes
+      name: podman
+      state: present
+  - name: public signing key
+    become: yes
+    get_url:
+      url: https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key
+      dest: $keyring
+  - name: Install gpg key
+    become: yes
+    apt_repository:
+      repo: "deb [signed-by=$keyring] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /"
+      state: present
+  - name: Update and install kubeadm, kubelet, and kubectl
+    become: yes
+    apt:
+      update_cache: yes
+      name:
+        - kubeadm
+        - kubelet
+        - kubectl
+      state: present
+  - name: Enable and start podman
+    become: yes
+    service:
+      name: podman
+      state: started
+      enabled: yes
+  - name: Enable and start kubelet
+    become: yes
+    service:
+      name: kubelet
+      state: started
+      enabled: yes

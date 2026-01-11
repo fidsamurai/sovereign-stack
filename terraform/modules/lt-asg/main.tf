@@ -30,7 +30,8 @@ resource "aws_launch_template" "cplane" {
   image_id = aws_ami.ubuntu.id
   iam_instance_profile = var.lt_cplane_iam_instance_profile
   key_name = cplane
-  vpc_security_group_ids = [aws_security_group.cplane.id]  
+  vpc_security_group_ids = [aws_security_group.cplane.id]
+  user_data = base64encode(file("${path.module}/cluster_join.sh"))
 }
 
 resource "aws_autoscaling_group" "cplane" {

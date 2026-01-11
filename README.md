@@ -25,11 +25,11 @@ To ensure the platform meets the high-availability and security requirements of 
 
 - [-] Terraform module based template.
   - [x] Network Module
-  - [-] LT + ASG (Control plane + Workers)
-  - [] ALB Module 
-  - [] RDS Module
+  - [x] LT + ASG (Control plane + Workers)
+  - [x] ALB Module (aws-load-balancer-controller via helm) 
+  - [] RDS + Self-hosted Redis + Self Hosted Elasticsearch Module
   - [] S3 + CloudFront Module 
-  - [] Route53 Module (With Application Recovery Controller)
+  - [] Route53 Module (With Application Recovery Controller) + Jump Server
 
 - [] Ansible playbook to automate the Control Plane setup.
 - [x] Packer to create the AMI with Podman and K8s for the workers.
@@ -46,6 +46,8 @@ To ensure the platform meets the high-availability and security requirements of 
   - [] Grafana
   - [] Alertmanager
   - [] Loki
+
+- [] Wrapper script in Go to automate the entire process end-end.
 
 ### Setups steps ->
 
