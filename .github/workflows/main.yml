@@ -31,5 +31,5 @@ jobs:
       with:
         generate_release_notes: true
         files: |
-          sov-cli
-          sov-cli.exe
+          wrapper/sov-cli
+          wrapper/sov-cli.exe
