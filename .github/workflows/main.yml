@@ -20,16 +20,26 @@ jobs:
         cd wrapper
         #Linux x86_64
         GOOS=linux GOARCH=amd64 go build -o sov-cli .
+        tar -czvf sov-cli-linux-amd64.tar.gz sov-cli
         #Linux ARM64
         GOOS=linux GOARCH=arm64 go build -o sov-cli .
+        tar -czvf sov-cli-linux-arm64.tar.gz sov-cli
         #Mac
         GOOS=darwin GOARCH=amd64 go build -o sov-cli .
+        tar -czvf sov-cli-darwin-amd64.tar.gz sov-cli
+        #Mac ARM64
+        GOOS=darwin GOARCH=arm64 go build -o sov-cli .
+        tar -czvf sov-cli-darwin-arm64.tar.gz sov-cli
         #Windows
         GOOS=windows GOARCH=amd64 go build -o sov-cli.exe .
+        tar -czvf sov-cli-windows-amd64.tar.gz sov-cli.exe
     - name: Upload binaries to GitHub Releases
       uses: softprops/action-gh-release@v1
       with:
         generate_release_notes: true
         files: |
-          wrapper/sov-cli
-          wrapper/sov-cli.exe
+          wrapper/sov-cli-linux-amd64.tar.gz
+          wrapper/sov-cli-linux-arm64.tar.gz
+          wrapper/sov-cli-darwin-amd64.tar.gz
+          wrapper/sov-cli-darwin-arm64.tar.gz
+          wrapper/sov-cli-windows-amd64.tar.gz
