@@ -24,3 +24,9 @@ jobs:
         GOOS=darwin GOARCH=amd64 go build -o sov-cli .
         #Windows
         GOOS=windows GOARCH=amd64 go build -o sov-cli.exe .
+    - name: Upload binaries to GitHub Releases
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          sov-cli
+          sov-cli.exe
