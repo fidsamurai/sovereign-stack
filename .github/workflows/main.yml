@@ -16,6 +16,8 @@ jobs:
         go-version: '1.25.4'
     - name: Build
       run: |
+        #Go into the cli folder
+        cd wrapper
         #Linux x86_64
         GOOS=linux GOARCH=amd64 go build -o sov-cli .
         #Linux ARM64
@@ -27,6 +29,7 @@ jobs:
     - name: Upload binaries to GitHub Releases
       uses: softprops/action-gh-release@v1
       with:
+        generate_release_notes: true
         files: |
           sov-cli
           sov-cli.exe
