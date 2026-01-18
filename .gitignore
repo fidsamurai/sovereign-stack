@@ -5,5 +5,10 @@
 *.tfstate
 *.tfstate.*.backup
 
+#Ignoring env var files in terragrunt for security
+*/**/env_vars.yaml
+config.yaml
+
 # My notes
 otp.txt
+sso.txt

@@ -3,12 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../../modules/network"
-  source = "../../../modules/lt-asg"
-  source = "../../../modules/alb"
-  source = "../../../modules/rds"
-  source = "../../../modules/s3-cloudfront"
-  source = "../../../modules/route53"
+  source = "../../../../modules/network"
 }
 
 inputs = {
@@ -27,12 +22,12 @@ inputs = {
    public2_cidr_block = "192.168.4.0/24"
 
   # LT + ASG defaults
-   asg_cplane_key_name = "cplane"
-   asg_cplane_min_vcpu_count = 2
-   asg_cplane_max_vcpu_count = 4
-   asg_cplane_min_memory_mib = 2048
-   asg_cplane_max_memory_mib = 4096
+  # asg_cplane_key_name = "cplane"
+  # asg_cplane_min_vcpu_count = 2
+  # asg_cplane_max_vcpu_count = 4
+  # asg_cplane_min_memory_mib = 2048
+  # asg_cplane_max_memory_mib = 4096
 
-   token = ""
-   discovery_sha = ""
+  # token = ""
+  # discovery_sha = ""
 }
