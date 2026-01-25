@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -11,6 +12,8 @@ import (
 )
 
 type Config struct {
+	EnvProd                   string `yaml:"env_prod" module:"root"`
+	Profile                   string `yaml:"profile" module:"root"`
 	REGION                    string `yaml:"aws_region" module:"root"`
 	CIDR                      string `yaml:"cidr_block" module:"network"`
 	AZ1                       string `yaml:"availability_zone_pri1" module:"network"`
@@ -124,30 +127,16 @@ func WriteModuleVars(target any, env string, zone string) error {
 		if module == "root" {
 			dirPath := fmt.Sprintf("../terraform/env/%s/%s/region.hcl", env, cleanZone)
 
-			// Check if file needs a newline prepended
-			needsNewline := false
-			if info, err := os.Stat(dirPath); err == nil && info.Size() > 0 {
-				f, err := os.Open(dirPath)
-				if err == nil {
-					buf := make([]byte, 1)
-					if _, err := f.ReadAt(buf, info.Size()-1); err == nil {
-						if buf[0] != '\n' {
-							needsNewline = true
-						}
-					}
-					f.Close()
-				}
+			// Ensure directory exists
+			if err := os.MkdirAll(filepath.Dir(dirPath), 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", filepath.Dir(dirPath), err)
 			}
 
-			file, err := os.OpenFile(dirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			file, err := os.OpenFile(dirPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				return fmt.Errorf("failed to write %s: %w", dirPath, err)
 			}
 			defer file.Close()
-
-			if needsNewline {
-				file.WriteString("\n")
-			}
 
 			// Wrap in locals block
 			finalContent := fmt.Sprintf("locals {\n%s}\n", content)

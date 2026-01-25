@@ -6,8 +6,9 @@
 *.tfstate.*.backup
 *.terraform.lock.hcl
 */.terraform.lock.hcl
-backend.tf
-provider.tf
+**/backend.tf
+**/provider.tf
+**/.terragrunt-cache/
 
 #Ignoring env var files in terragrunt for security
 */**/env_vars.yaml

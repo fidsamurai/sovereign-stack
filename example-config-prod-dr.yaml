@@ -1,5 +1,7 @@
 #PROD DR vars
 
+env_prod: "true"
+profile: "prod-dr"
 aws_region: "eu-west-2" 
 #Network defaults
 cidr_block: "192.168.0.0/16"

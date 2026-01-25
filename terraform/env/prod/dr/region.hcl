@@ -1,5 +1,5 @@
 locals {
   env_prod = "true"
-  profile = "prod"
+  profile = "prod-dr"
   region = "eu-west-2"
 }

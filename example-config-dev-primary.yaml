@@ -1,5 +1,7 @@
 #Dev PRI vars
 
+env_prod: "false"
+profile: "dev"
 aws_region: "eu-west-2" 
 #Network defaults
 cidr_block: "192.168.0.0/16"
