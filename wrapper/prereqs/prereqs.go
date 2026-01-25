@@ -43,9 +43,9 @@ func CheckCommands() error {
 
 func CheckConfigs() error {
 	configs := []string{
-		"../config-dev-pri.yaml",
+		"../config-dev-primary.yaml",
 		"../config-dev-dr.yaml",
-		"../config-prod-pri.yaml",
+		"../config-prod-primary.yaml",
 		"../config-prod-dr.yaml",
 	}
 
@@ -78,7 +78,9 @@ func CheckConfigs() error {
 			if v.Field(i).IsZero() {
 				return fmt.Errorf("file %s is missing required field: %s", path, yamlTag)
 			}
-			WriteModuleVars(target, env, zone)
+		}
+		if err := WriteModuleVars(target, env, zone); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -102,19 +104,50 @@ func WriteModuleVars(target any, env string, zone string) error {
 		}
 
 		// Append this variable to the specific module's string
-		moduleData[moduleName] += fmt.Sprintf("%s: \"%s\"\n", yamlKey, fieldValue)
+		if moduleName == "root" {
+			key := yamlKey
+			if key == "aws_region" {
+				key = "region"
+			}
+			moduleData[moduleName] += fmt.Sprintf("%s = \"%s\"\n", key, fieldValue)
+
+		} else {
+			moduleData[moduleName] += fmt.Sprintf("%s: \"%s\"\n", yamlKey, fieldValue)
+		}
 	}
 
 	// 2. Write the files to the specific region/env path
 	for module, content := range moduleData {
+		cleanZone := strings.TrimSuffix(zone, ".yaml")
+
 		// Example Path: ../terraform/env/dev/network/env_vars.yaml
 		if module == "root" {
-			dirPath := fmt.Sprintf("../terraform/env/%s/%s/region.hcl", env, zone)
+			dirPath := fmt.Sprintf("../terraform/env/%s/%s/region.hcl", env, cleanZone)
+
+			// Check if file needs a newline prepended
+			needsNewline := false
+			if info, err := os.Stat(dirPath); err == nil && info.Size() > 0 {
+				f, err := os.Open(dirPath)
+				if err == nil {
+					buf := make([]byte, 1)
+					if _, err := f.ReadAt(buf, info.Size()-1); err == nil {
+						if buf[0] != '\n' {
+							needsNewline = true
+						}
+					}
+					f.Close()
+				}
+			}
+
 			file, err := os.OpenFile(dirPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				return fmt.Errorf("failed to write %s: %w", dirPath, err)
 			}
 			defer file.Close()
+
+			if needsNewline {
+				file.WriteString("\n")
+			}
 			if _, err := file.WriteString(content); err != nil {
 				return fmt.Errorf("failed to write %s: %w", dirPath, err)
 			}
@@ -122,7 +155,7 @@ func WriteModuleVars(target any, env string, zone string) error {
 			continue
 		}
 
-		dirPath := fmt.Sprintf("../terraform/env/%s/%s/%s", env, strings.TrimSuffix(zone, ".yaml"), module)
+		dirPath := fmt.Sprintf("../terraform/env/%s/%s/%s", env, cleanZone, module)
 
 		// Create the directory if it doesn't exist
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
