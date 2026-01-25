@@ -1,6 +1,6 @@
-#DR vars
+#PROD DR vars
 
-dr_aws_region: "eu-west-2" 
+aws_region: "eu-west-2" 
 #Network defaults
 cidr_block: "192.168.0.0/16"
 availability_zone_pri1: "eu-west-2a"

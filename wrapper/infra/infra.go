@@ -2,78 +2,81 @@ package infra
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 )
 
-func SSHKeys() {
-	// Create the required keys in the /home/folder
-	keys_to_make := []string{"cplane_pri", "cplane_dr", "worker_pri", "worker_dr", "jump_server"}
+// SSHKeys generates required keys. Note: Changed firstTime to bool.
+func SSHKeys(firstTime bool) error {
+	if !firstTime {
+		return nil
+	}
 
-	for _, key := range keys_to_make {
-		sshkeys := exec.Command("ssh-keygen", "-t", "ed25519", "-f", "~/.ssh/"+key+".pem", "-C", key)
-		output, err := sshkeys.CombinedOutput()
-		if err != nil {
-			fmt.Println("Error creating SSH Key: ", err)
+	keys := []string{"dev_cplane_pri", "dev_cplane_dr", "dev_worker_pri", "dev_worker_dr", "dev_jump_server",
+		"prod_cplane_pri", "prod_cplane_dr", "prod_worker_pri", "prod_worker_dr", "prod_jump_server"}
+
+	for _, key := range keys {
+		// Note: "~" shell expansion doesn't always work in exec.Command; os.UserHomeDir is safer.
+		home, _ := os.UserHomeDir()
+		path := fmt.Sprintf("%s/.ssh/%s.pem", home, key)
+
+		// Fixed the N argument and path handling
+		cmd := exec.Command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", path, "-C", key)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to create SSH Key %s: %w (output: %s)", key, err, string(output))
 		}
-		fmt.Println("SSH Key created successfully", string(output))
+		fmt.Printf("✅ SSH Key created: %s\n", key)
+	}
+	return nil
+}
+
+func Init(firstTime bool) error {
+	if !firstTime {
+		return nil
 	}
 
-}
+	cmd := exec.Command("terragrunt", "init")
+	cmd.Dir = "../terraform/"
+	fmt.Printf("🚀 Running Terragrunt Init in %s\n", cmd.Dir)
 
-func Init() {
-	// Terragrunt Init
-	terragrunt := exec.Command("terragrunt", "init")
-	terragrunt.Dir = "../terraform/"
-	fmt.Printf("Running Terragrunt Init in %s\n", terragrunt.Dir)
-	output, err := terragrunt.CombinedOutput()
-
-	if err != nil {
-		fmt.Println("Error running terragrunt init: ", err)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("terragrunt init failed: %w\n%s", err, string(output))
 	}
-
-	fmt.Println("Terragrunt Init completed successfully", string(output))
+	fmt.Println("✅ Terragrunt Init completed.")
+	return nil
 }
 
-func GetVars() {
-	//User input on variables to be written to the env_vars of each module.
+func Apply(firstTime bool) error {
+	workingDir := "../terraform/"
 
-}
-
-func Apply(first_time string) {
-	//Check if this is a first time deployment and run terragrunt plan or apply
-	if first_time == "--first-time=false" {
+	// If not first time, we do a manual Plan + Approval check
+	if !firstTime {
 		plan := exec.Command("terragrunt", "plan")
-		plan.Dir = "../terraform/"
-		fmt.Printf("Running Terragrunt Plan in %s\n", plan.Dir)
-		output, err := plan.CombinedOutput()
-		if err != nil {
-			fmt.Println("Error running terragrunt plan: ", err)
+		plan.Dir = workingDir
+		fmt.Println("🔍 Running Terragrunt Plan...")
+
+		if out, err := plan.CombinedOutput(); err != nil {
+			return fmt.Errorf("plan failed: %w\n%s", err, string(out))
 		}
-		fmt.Println("Terragrunt Plan completed successfully", string(output))
-		fmt.Println("Type 'true' if you would like to continue the deployment: ")
+
+		fmt.Print("❓ Plan successful. Type 'true' to apply: ")
 		var approval bool
 		fmt.Scanf("%t", &approval)
-		if approval != true {
-			fmt.Println("Deployment cancelled")
-			return
-		} else {
-			apply := exec.Command("terragrunt", "apply", "-auto-approve")
-			apply.Dir = "../terraform/"
-			fmt.Printf("Running Terragrunt Apply in %s\n", apply.Dir)
-			output, err := apply.CombinedOutput()
-			if err != nil {
-				fmt.Println("Error running terragrunt apply: ", err)
-			}
-			fmt.Println("Terragrunt Apply completed successfully", string(output))
+		if !approval {
+			return fmt.Errorf("deployment cancelled by user")
 		}
-	} else {
-		apply := exec.Command("terragrunt", "apply", "-auto-approve")
-		apply.Dir = "../terraform/"
-		fmt.Printf("Running Terragrunt Apply in %s\n", apply.Dir)
-		output, err := apply.CombinedOutput()
-		if err != nil {
-			fmt.Println("Error running terragrunt apply: ", err)
-		}
-		fmt.Println("Terragrunt Apply completed successfully", string(output))
 	}
+
+	// Actual Apply (runs for firstTime=true OR after approval)
+	apply := exec.Command("terragrunt", "apply", "-auto-approve")
+	apply.Dir = workingDir
+	fmt.Println("🏗️  Running Terragrunt Apply...")
+
+	output, err := apply.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("apply failed: %w\n%s", err, string(output))
+	}
+
+	fmt.Println("✅ Terragrunt Apply completed successfully.")
+	return nil
 }

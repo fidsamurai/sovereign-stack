@@ -51,29 +51,32 @@ To ensure the platform meets the high-availability and security requirements of 
 
 ### Setups steps ->
 
-Recommended setup ->
+-> Recommended setup ->
 
-
-1. git clone git@github.com:sovereign-stack/sovereign-stack.git
+```
+1. `git clone git@github.com:sovereign-stack/sovereign-stack.git`
 2. cd sovereign-stack/
-3. Download release for the binary from the repo's release page and place it in the wrapper folder.
-4. cp config-example.yaml config.yaml #Enter all the values in the config.yaml file for the region you want to deploy to.
-5. cd wrapper/
+3. Move all the example-config-*.yaml to config-*.yaml #Enter all the values in the config-*.yaml file for the region and environment.
+4. cd wrapper/
+5. Download release for the your OS and architecture from https://github.com/fidsamurai/sovereign-stack/releases and extract it.
 6. ./sov-cli prereqs #Ensure there are no errors in the output.
 7. ./sov-cli infra --first-time=true #--first-time=true is ONLY for the first time deployment.
+```
 
-If you are a power user and want to handle the setup more manually ->
-
+-> If you are a power user and want to handle the setup more manually ->
 ```
 On local system
 1. git clone git@github.com:sovereign-stack/sovereign-stack.git
 2. cd sovereign-stack
-3. ssh-keygen -t ed25519 -C "cplane" -f ~/.ssh/cplane.pem (Press enter twice for no passphrase)
-4. ssh-keygen -t ed25519 -C "workers" -f ~/.ssh/workers.pem (Press enter twice for no passphrase)
-4. cd terraform/env/
-5. terragrunt run-all init
-6. terragrunt run-all plan
-7. terragrunt run-all apply
+3. ssh-keygen -t ed25519 -C "cplane_pri" -f ~/.ssh/cplane_pri.pem (Press enter twice for no passphrase)
+4. ssh-keygen -t ed25519 -C "cplane_dr" -f ~/.ssh/cplane_dr.pem (Press enter twice for no passphrase)
+5. ssh-keygen -t ed25519 -C "worker_pri" -f ~/.ssh/worker_pri.pem (Press enter twice for no passphrase)
+6. ssh-keygen -t ed25519 -C "worker_dr" -f ~/.ssh/worker_dr.pem (Press enter twice for no passphrase)
+7. ssh-keygen -t ed25519 -C "jump_server" -f ~/.ssh/jump_server.pem (Press enter twice for no passphrase)
+8. cd terraform/env/
+9. terragrunt run-all init
+10. terragrunt run-all plan
+11. terragrunt run-all apply
 
 On AWS Control Plane
 8. Ansible run tag for cplane setup.

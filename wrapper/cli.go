@@ -8,6 +8,13 @@ import (
 	"wrapper/prereqs"
 )
 
+func handle(err error) {
+	if err != nil {
+		fmt.Printf("Critical Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 
 	if len(os.Args) < 2 {
@@ -17,15 +24,22 @@ func main() {
 
 	switch os.Args[1] {
 	case "prereqs":
-		prereqs.Check()
+		//Settings flags for the prereqs
+		prereqsCmd := flag.NewFlagSet("prereqs", flag.ExitOnError)
+		prereqsCmd.Parse(os.Args[2:])
+		//Running the functions
+		handle(prereqs.CheckCommands())
+		handle(prereqs.CheckConfigs())
 	case "infra":
-		if len(os.Args) < 3 {
-			fmt.Println("Error: The infra module requires the argument --first-time=true/false")
-			return
-		}
-		infra.SSHKeys()
-		infra.Init()
-		infra.Apply(os.Args[2])
+		//Setting flags for the CLI
+		infraCmd := flag.NewFlagSet("infra", flag.ExitOnError)
+		firstTime := infraCmd.Bool("first-time", false, "Set to true for first deployment")
+		infraCmd.Parse(os.Args[2:])
+		isFirstTime := *firstTime
+		//Running the functions
+		handle(infra.SSHKeys(isFirstTime))
+		handle(infra.Init(isFirstTime))
+		handle(infra.Apply(isFirstTime))
 	default:
 		flag.Usage()
 	}

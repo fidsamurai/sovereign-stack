@@ -7,7 +7,11 @@
 
 #Ignoring env var files in terragrunt for security
 */**/env_vars.yaml
-config.yaml
+config-*.yaml
+
+#Ignoring wrapper/sov-cli
+wrapper/sov-cli
+*/**.tar.gz
 
 # My notes
 otp.txt
