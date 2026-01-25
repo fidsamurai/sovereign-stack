@@ -4,6 +4,8 @@
 # .tfstate files
 *.tfstate
 *.tfstate.*.backup
+*.terraform.lock.hcl
+*/.terraform.lock.hcl
 
 #Ignoring env var files in terragrunt for security
 */**/env_vars.yaml
