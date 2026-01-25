@@ -109,7 +109,7 @@ func WriteModuleVars(target any, env string, zone string) error {
 			if key == "aws_region" {
 				key = "region"
 			}
-			moduleData[moduleName] += fmt.Sprintf("%s = \"%s\"\n", key, fieldValue)
+			moduleData[moduleName] += fmt.Sprintf("  %s = \"%s\"\n", key, fieldValue)
 
 		} else {
 			moduleData[moduleName] += fmt.Sprintf("%s: \"%s\"\n", yamlKey, fieldValue)
@@ -148,7 +148,11 @@ func WriteModuleVars(target any, env string, zone string) error {
 			if needsNewline {
 				file.WriteString("\n")
 			}
-			if _, err := file.WriteString(content); err != nil {
+
+			// Wrap in locals block
+			finalContent := fmt.Sprintf("locals {\n%s}\n", content)
+
+			if _, err := file.WriteString(finalContent); err != nil {
 				return fmt.Errorf("failed to write %s: %w", dirPath, err)
 			}
 			fmt.Printf("📂 Written vars for module [%s] to %s\n", module, dirPath)
