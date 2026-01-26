@@ -53,6 +53,7 @@ func CheckConfigs() error {
 	}
 
 	target := &Config{}
+	var requiredProfiles []string
 
 	for _, path := range configs {
 		data, err := os.ReadFile(path)
@@ -82,10 +83,52 @@ func CheckConfigs() error {
 				return fmt.Errorf("file %s is missing required field: %s", path, yamlTag)
 			}
 		}
+
+		requiredProfiles = append(requiredProfiles, target.Profile)
+
 		if err := WriteModuleVars(target, env, zone); err != nil {
 			return err
 		}
 	}
+
+	// Validate profiles
+	if err := CheckProfiles(requiredProfiles); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CheckProfiles(required []string) error {
+	// Get available profiles
+	cmd := exec.Command("aws", "configure", "list-profiles")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to list aws profiles: %w", err)
+	}
+
+	available := make(map[string]bool)
+	for _, p := range strings.Split(string(output), "\n") {
+		if strings.TrimSpace(p) != "" {
+			available[strings.TrimSpace(p)] = true
+		}
+	}
+
+	// Check if required profiles exist
+	var missing []string
+	for _, req := range required {
+		if !available[req] {
+			missing = append(missing, req)
+			fmt.Printf("❌ AWS Profile '%s' MISSING\n", req)
+		} else {
+			fmt.Printf("✅ AWS Profile '%s' found\n", req)
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("missing profiles: %v. Please configure them using 'aws configure --profile <name>'", strings.Join(missing, ", "))
+	}
+
 	return nil
 }
 
