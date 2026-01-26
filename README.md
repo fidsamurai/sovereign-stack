@@ -63,24 +63,5 @@ To ensure the platform meets the high-availability and security requirements of 
 7. ./sov-cli infra --first-time=true #--first-time=true is ONLY for the first time deployment.
 ```
 
--> If you are a power user and want to handle the setup more manually ->
-```
-On local system
-1. git clone git@github.com:sovereign-stack/sovereign-stack.git
-2. cd sovereign-stack
-3. ssh-keygen -t ed25519 -C "cplane_pri" -f ~/.ssh/cplane_pri.pem (Press enter twice for no passphrase)
-4. ssh-keygen -t ed25519 -C "cplane_dr" -f ~/.ssh/cplane_dr.pem (Press enter twice for no passphrase)
-5. ssh-keygen -t ed25519 -C "worker_pri" -f ~/.ssh/worker_pri.pem (Press enter twice for no passphrase)
-6. ssh-keygen -t ed25519 -C "worker_dr" -f ~/.ssh/worker_dr.pem (Press enter twice for no passphrase)
-7. ssh-keygen -t ed25519 -C "jump_server" -f ~/.ssh/jump_server.pem (Press enter twice for no passphrase)
-8. cd terraform/env/
-9. terragrunt run-all init
-10. terragrunt run-all plan
-11. terragrunt run-all apply
-
-On AWS Control Plane
-8. Ansible run tag for cplane setup.
-
-On Control Plane
-9. Helm setup for the cluster. (Repeat for all other environments.)
-```
+### Development Note This CLI was architected using Anti-gravity via 'vibe coding' patterns.
+### Attribution is given to the Anti-gravity engine for the structural scaffolding.
