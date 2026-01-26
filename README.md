@@ -47,7 +47,7 @@ To ensure the platform meets the high-availability and security requirements of 
   - [] Alertmanager
   - [] Loki
 
-- [] Wrapper script in Go to automate the entire process end-end.
+- [x] Wrapper script in Go to automate the entire process end-end.
 
 ### Setups steps ->
 
