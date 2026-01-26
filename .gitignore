@@ -5,18 +5,19 @@
 *.tfstate
 *.tfstate.*.backup
 *.terraform.lock.hcl
-*/.terraform.lock.hcl
-**/backend.tf
-**/provider.tf
-**/.terragrunt-cache/
+.terraform.lock.hcl
+backend.tf
+provider.tf
+.terragrunt-cache/
+region.hcl
 
 #Ignoring env var files in terragrunt for security
-*/**/env_vars.yaml
+env_vars.yaml
 config-*.yaml
 
 #Ignoring wrapper/sov-cli
 wrapper/sov-cli
-*/**.tar.gz
+*.tar.gz
 
 # My notes
 otp.txt
