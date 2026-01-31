@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"wrapper/infra"
 	"wrapper/prereqs"
 )
@@ -34,12 +35,17 @@ func main() {
 		//Setting flags for the CLI
 		infraCmd := flag.NewFlagSet("infra", flag.ExitOnError)
 		firstTime := infraCmd.Bool("first-time", false, "Set to true for first deployment")
+		modules := infraCmd.String("modules", "all", "Comma separated list of modules to deploy for eg. dev-dr-network,prod-primary-alb or all for all modules")
+
 		infraCmd.Parse(os.Args[2:])
+
 		isFirstTime := *firstTime
+		modulesList := strings.Split(*modules, ",")
+
 		//Running the functions
 		handle(infra.SSHKeys(isFirstTime))
 		handle(infra.Init(isFirstTime))
-		handle(infra.Apply(isFirstTime))
+		handle(infra.Apply(isFirstTime, modulesList))
 	default:
 		flag.Usage()
 	}

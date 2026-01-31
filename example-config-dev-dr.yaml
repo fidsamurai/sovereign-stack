@@ -1,18 +1,14 @@
 #Dev DR vars
 
-env_prod: "false"
+env_prod: false
 profile: "dev-dr"
 aws_region: "eu-west-2" 
 #Network defaults
 cidr_block: "192.168.0.0/16"
-availability_zone_pri1: "eu-west-2a"
-availability_zone_pri2: "eu-west-2b"
-availability_zone_pub1: "eu-west-2a"
-availability_zone_pub2: "eu-west-2b"
-private1_cidr_block: "192.168.1.0/24"
-private2_cidr_block: "192.168.2.0/24"
-public1_cidr_block: "192.168.3.0/24"
-public2_cidr_block: "192.168.4.0/24"
+private_availability_zones: ["eu-west-2a", "eu-west-2b"]
+public_availability_zones: ["eu-west-2a", "eu-west-2b"]
+private_cidr_blocks: ["192.168.1.0/24", "192.168.2.0/24"]
+public_cidr_blocks: ["192.168.3.0/24", "192.168.4.0/24"]
 
 #LT + ASG defaults
 asg_cplane_key_name: "cplane"

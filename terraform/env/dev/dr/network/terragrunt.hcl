@@ -1,26 +1,24 @@
-# 1. Include the root for remote state and global settings
+# This tells this module to inherit the generate block and state logic from root
 include "root" {
-  path = find_in_parent_folders()
-}
-
-# 2. Include the variable for the module
-locals {
-  module_vars  = yamldecode(file("env_vars.yaml"))
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {
   source = "../../../../modules/network"
 }
 
+# Load module-specific variables
+locals {
+  module_vars = yamldecode(file("env_vars.yaml"))
+}
+
 inputs = {
   # Network defaults
    cidr_block = local.module_vars.cidr_block
-   availability_zone_pri1 = local.module_vars.availability_zone_pri1
-   availability_zone_pri2 = local.module_vars.availability_zone_pri2
-   availability_zone_pub1 = local.module_vars.availability_zone_pub1
-   availability_zone_pub2 = local.module_vars.availability_zone_pub2
-   private1_cidr_block = local.module_vars.private1_cidr_block
-   private2_cidr_block = local.module_vars.private2_cidr_block
-   public1_cidr_block = local.module_vars.public1_cidr_block
-   public2_cidr_block = local.module_vars.public2_cidr_block
+   private_availability_zones = local.module_vars.private_availability_zones
+   public_availability_zones = local.module_vars.public_availability_zones
+   private_cidr_blocks = local.module_vars.private_cidr_blocks
+   public_cidr_blocks = local.module_vars.public_cidr_blocks
+   nat_ami = local.module_vars.nat_ami
+   nat_instance_type = local.module_vars.nat_instance_type
 }

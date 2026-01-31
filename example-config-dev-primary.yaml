@@ -1,6 +1,6 @@
 #Dev PRI vars
 
-env_prod: "false"
+env_prod: false
 profile: "dev"
 aws_region: "eu-west-2" 
 #Network defaults

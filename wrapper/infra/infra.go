@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // SSHKeys generates required keys. Note: Changed firstTime to bool.
@@ -46,37 +47,76 @@ func Init(firstTime bool) error {
 	return nil
 }
 
-func Apply(firstTime bool) error {
-	workingDir := "../terraform/"
+func Apply(firstTime bool, modulesList []string) error {
+	if firstTime {
+		fmt.Println("🏗️  Running Initial Full Deployment (terragrunt apply -a)...")
+		apply := exec.Command("terragrunt", "apply", "-a", "-auto-approve")
+		apply.Dir = "../terraform/"
+		if out, err := apply.CombinedOutput(); err != nil {
+			return fmt.Errorf("initial apply failed: %w\n%s", err, string(out))
+		}
+		fmt.Println("✅ Initial Deployment completed successfully.")
+		return nil
+	}
 
-	// If not first time, we do a manual Plan + Approval check
-	if !firstTime {
-		plan := exec.Command("terragrunt", "plan")
+	// Modular Updates (firstTime == false)
+	for _, module := range modulesList {
+		if module == "" {
+			continue
+		}
+		var workingDir string
+		var isAll bool
+
+		if module == "all" {
+			workingDir = "../terraform/"
+			isAll = true
+		} else {
+			moduleSplit := strings.Split(module, "-")
+			if len(moduleSplit) != 3 {
+				return fmt.Errorf("invalid module format: '%s'. Expected env-region-component (e.g., dev-dr-network)", module)
+			}
+			workingDir = fmt.Sprintf("../terraform/env/%s/%s/%s", moduleSplit[0], moduleSplit[1], moduleSplit[2])
+			isAll = false
+		}
+
+		// Plan step
+		var plan *exec.Cmd
+		if isAll {
+			plan = exec.Command("terragrunt", "plan", "-a")
+		} else {
+			plan = exec.Command("terragrunt", "plan")
+		}
 		plan.Dir = workingDir
-		fmt.Println("🔍 Running Terragrunt Plan...")
+		fmt.Printf("🔍 Running Plan for: %s...\n", module)
 
 		if out, err := plan.CombinedOutput(); err != nil {
-			return fmt.Errorf("plan failed: %w\n%s", err, string(out))
+			return fmt.Errorf("plan failed for %s: %w\n%s", module, err, string(out))
 		}
 
-		fmt.Print("❓ Plan successful. Type 'true' to apply: ")
+		// User Approval
+		fmt.Printf("❓ Plan successful for %s. Type 'true' to apply: ", module)
 		var approval bool
-		fmt.Scanf("%t", &approval)
-		if !approval {
-			return fmt.Errorf("deployment cancelled by user")
+		_, err := fmt.Scanf("%t", &approval)
+		if err != nil || !approval {
+			fmt.Printf("⏭️  Skipping apply for %s (received: %v)\n", module, approval)
+			continue
 		}
+
+		// Apply step
+		var apply *exec.Cmd
+		if isAll {
+			apply = exec.Command("terragrunt", "apply", "-a", "-auto-approve")
+		} else {
+			apply = exec.Command("terragrunt", "apply", "-auto-approve")
+		}
+		apply.Dir = workingDir
+		fmt.Printf("🏗️  Running Apply for %s...\n", module)
+
+		if out, err := apply.CombinedOutput(); err != nil {
+			return fmt.Errorf("apply failed for %s: %w\n%s", module, err, string(out))
+		}
+		fmt.Printf("✅ %s deployed successfully.\n", module)
 	}
 
-	// Actual Apply (runs for firstTime=true OR after approval)
-	apply := exec.Command("terragrunt", "apply", "-auto-approve")
-	apply.Dir = workingDir
-	fmt.Println("🏗️  Running Terragrunt Apply...")
-
-	output, err := apply.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("apply failed: %w\n%s", err, string(output))
-	}
-
-	fmt.Println("✅ Terragrunt Apply completed successfully.")
 	return nil
 }

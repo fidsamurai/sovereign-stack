@@ -8,42 +8,32 @@ variable "cidr_block" {
     default = "192.168.0.0/16"
 }
 
-variable "availability_zone_pri1" {
-    type = string
-    default = "eu-west-1a"
+variable "private_availability_zones" {
+    type = list(string)
+    default = ["eu-west-1a", "eu-west-1b"]
 }
 
-variable "availability_zone_pri2" {
-    type = string
-    default = "eu-west-1b"
+variable "public_availability_zones" {
+    type = list(string)
+    default = ["eu-west-1c", "eu-west-1d"]
 }
 
-variable "availability_zone_pub1" {
-    type = string
-    default = "eu-west-1c"
+variable "private_cidr_blocks" {
+    type = list(string)
+    default = ["192.168.1.0/24", "192.168.2.0/24"]
 }
 
-variable "availability_zone_pub2" {
-    type = string
-    default = "eu-west-1d"
+variable "public_cidr_blocks" {
+    type = list(string)
+    default = ["192.168.3.0/24", "192.168.4.0/24"]
 }
 
-variable "private1_cidr_block" {
+variable "nat_ami" {
     type = string
-    default = "192.168.1.0/24"
+    default = "ami-0c55b159cbfafe1f0"
 }
 
-variable "private2_cidr_block" {
+variable "nat_instance_type" {
     type = string
-    default = "192.168.2.0/24"
-}
-
-variable "public1_cidr_block" {
-    type = string
-    default = "192.168.3.0/24"
-}
-
-variable "public2_cidr_block" {
-    type = string
-    default = "192.168.4.0/24"
+    default = "t4g.micro"
 }

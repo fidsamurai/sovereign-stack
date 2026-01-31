@@ -3,44 +3,31 @@ resource "aws_vpc" "vpc" {
   cidr_block = var.cidr_block
   enable_dns_support = true
   enable_dns_hostnames = true
-}
 
-resource "aws_subnet" "private1" {
-  vpc_id = aws_vpc.vpc.id
-  cidr_block = var.private1_cidr_block
-  availability_zone = var.availability_zone_pri1
   tags = {
-    Name = "private1",
+    Name = var.env_prod ? "prod" : "dev",
     Env = var.env_prod ? "prod" : "dev"
   }
 }
 
-resource "aws_subnet" "private2" {
+resource "aws_subnet" "private" {
+  count = length(var.private_availability_zones)
   vpc_id = aws_vpc.vpc.id
-  cidr_block = var.private2_cidr_block
-  availability_zone = var.availability_zone_pri2
+  cidr_block = var.private_cidr_blocks[count.index]
+  availability_zone = var.private_availability_zones[count.index]
   tags = {
-    Name = "private2",
+    Name = "private-${count.index}",
     Env = var.env_prod ? "prod" : "dev"
   }
 }
 
-resource "aws_subnet" "public1" {
+resource "aws_subnet" "public" {
+  count = length(var.public_availability_zones)
   vpc_id = aws_vpc.vpc.id
-  cidr_block = var.public1_cidr_block
-  availability_zone = var.availability_zone_pub1
+  cidr_block = var.public_cidr_blocks[count.index]
+  availability_zone = var.public_availability_zones[count.index]
   tags = {
-    Name = "public1",
-    Env = var.env_prod ? "prod" : "dev"
-  }
-}
-
-resource "aws_subnet" "public2" {
-  vpc_id = aws_vpc.vpc.id
-  cidr_block = var.public2_cidr_block
-  availability_zone = var.availability_zone_pub2
-  tags = {
-    Name = "public2",
+    Name = "public-${count.index}",
     Env = var.env_prod ? "prod" : "dev"
   }
 }
@@ -71,7 +58,8 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "public-rt"
+    Name = "public-rt",
+    Env = var.env_prod ? "prod" : "dev"
   }
 }
 
@@ -79,10 +67,6 @@ resource "aws_route_table_association" "public" {
   count = 2
   subnet_id = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
-  tags = {
-    Name = "public-rt-association-${count.index}",
-    Env = var.env_prod ? "prod" : "dev"
-  }
 }
 
 resource "aws_route_table" "private" {
@@ -94,7 +78,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "private-rt-${count.index}"
+    Name = "private-rt-${count.index}",
     Env = var.env_prod ? "prod" : "dev"
   }
 }
@@ -103,10 +87,6 @@ resource "aws_route_table_association" "private" {
   count = 2
   subnet_id = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
-  tags = {
-    Name = "private-rt-association-${count.index}",
-    Env = var.env_prod ? "prod" : "dev"
-  }
 }
 
 resource "aws_nat_gateway" "nat" {
@@ -119,24 +99,30 @@ resource "aws_nat_gateway" "nat" {
   }
 }
 
-resource "aws_ec2" "nat" {
-  count = var.env_prod ? 1 : 0
+resource "aws_instance" "nat" {
+  count = var.env_prod ? 0 : 1
   instance_type = var.nat_instance_type
   ami = var.nat_ami
-  subnet_id = aws_subnet.public1.id
+  subnet_id = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.nat.id]
   source_dest_check = false
   tags = {
     Name = "nat-ec2",
     Env = var.env_prod ? "prod" : "dev"
   }
-  user_data = base64encode(file("user_data.sh"))
+  user_data_base64 = base64encode(file("user_data.sh"))
 }
 
-resource "aws_eip_association" "nat" {
-  count = var.env_prod ? 1:0
-  instance_id = aws_ec2.nat.id
-  allocation_id = aws_eip.nat.id
+resource "aws_eip_association" "nat-instance" {
+  count = var.env_prod ? 0:1
+  instance_id = aws_instance.nat[0].id
+  allocation_id = aws_eip.nat[0].id
+}
+
+resource "aws_nat_gateway_eip_association" "nat-gateway" {
+  count = var.env_prod ? 2:0
+  allocation_id = aws_eip.nat[count.index].id
+  nat_gateway_id = aws_nat_gateway.nat[count.index].id
 }
 
 resource "aws_security_group" "nat" {
@@ -277,7 +263,9 @@ resource "aws_security_group" "Cplane" {
 
   ingress {
     cidr_blocks = [var.cidr_block]
-    ip_protocol = "4"
+    protocol = "4"
+    from_port = 0
+    to_port = 0
   }
 
   egress {
@@ -342,7 +330,9 @@ resource "aws_security_group" "workers" {
 
   ingress {
     cidr_blocks = [var.cidr_block]
-    ip_protocol = "4"
+    protocol = "4"
+    from_port = 0
+    to_port = 0
   }
 
   egress {
