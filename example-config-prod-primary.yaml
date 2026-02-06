@@ -2,17 +2,15 @@
 
 env_prod: true
 profile: "prod"
-aws_region: "eu-west-2" 
+aws_region: "eu-west-1" 
 #Network defaults
 cidr_block: "192.168.0.0/16"
-availability_zone_pri1: "eu-west-2a"
-availability_zone_pri2: "eu-west-2b"
-availability_zone_pub1: "eu-west-2a"
-availability_zone_pub2: "eu-west-2b"
-private1_cidr_block: "192.168.1.0/24"
-private2_cidr_block: "192.168.2.0/24"
-public1_cidr_block: "192.168.3.0/24"
-public2_cidr_block: "192.168.4.0/24"
+private_availability_zones: ["eu-west-1a", "eu-west-1b"]
+public_availability_zones: ["eu-west-1a", "eu-west-1b"]
+private_cidr_blocks: ["192.168.1.0/24", "192.168.2.0/24"]
+public_cidr_blocks: ["192.168.3.0/24", "192.168.4.0/24"]
+nat_ami: "ami-0c55b159cbfafe1f0"
+nat_instance_type: "t2.micro"
 
 #LT + ASG defaults
 asg_cplane_key_name: "cplane"

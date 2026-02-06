@@ -12,22 +12,20 @@ import (
 )
 
 type Config struct {
-	EnvProd                   string `yaml:"env_prod" module:"root"`
-	Profile                   string `yaml:"profile" module:"root"`
-	REGION                    string `yaml:"aws_region" module:"root"`
-	CIDR                      string `yaml:"cidr_block" module:"network"`
-	AZ1                       string `yaml:"availability_zone_pri1" module:"network"`
-	AZ2                       string `yaml:"availability_zone_pri2" module:"network"`
-	AZ3                       string `yaml:"availability_zone_pub1" module:"network"`
-	AZ4                       string `yaml:"availability_zone_pub2" module:"network"`
-	Private1_CIDR             string `yaml:"private1_cidr_block" module:"network"`
-	Private2_CIDR             string `yaml:"private2_cidr_block" module:"network"`
-	Public1_CIDR              string `yaml:"public1_cidr_block" module:"network"`
-	Public2_CIDR              string `yaml:"public2_cidr_block" module:"network"`
-	ASG_Cplane_Key_Name       string `yaml:"asg_cplane_key_name" module:"lt-asg"`
-	ASG_Cplane_Max_VCpu_Count string `yaml:"asg_cplane_max_vcpu_count" module:"lt-asg"`
-	ASG_Cplane_Min_Memory_MiB string `yaml:"asg_cplane_min_memory_mib" module:"lt-asg"`
-	ASG_Cplane_Max_Memory_MiB string `yaml:"asg_cplane_max_memory_mib" module:"lt-asg"`
+	EnvProd                    bool     `yaml:"env_prod" module:"root"`
+	Profile                    string   `yaml:"profile" module:"root"`
+	REGION                     string   `yaml:"aws_region" module:"root"`
+	CIDR                       string   `yaml:"cidr_block" module:"network"`
+	Private_AVAILABILITY_ZONES []string `yaml:"private_availability_zones,flow" module:"network"`
+	Public_AVAILABILITY_ZONES  []string `yaml:"public_availability_zones,flow" module:"network"`
+	Private_CIDR_BLOCKS        []string `yaml:"private_cidr_blocks,flow" module:"network"`
+	Public_CIDR_BLOCKS         []string `yaml:"public_cidr_blocks,flow" module:"network"`
+	NAT_AMI                    string   `yaml:"nat_ami" module:"network"`
+	NAT_INSTANCE_TYPE          string   `yaml:"nat_instance_type" module:"network"`
+	ASG_Cplane_Key_Name        string   `yaml:"asg_cplane_key_name" module:"lt-asg"`
+	ASG_Cplane_Max_VCpu_Count  string   `yaml:"asg_cplane_max_vcpu_count" module:"lt-asg"`
+	ASG_Cplane_Min_Memory_MiB  string   `yaml:"asg_cplane_min_memory_mib" module:"lt-asg"`
+	ASG_Cplane_Max_Memory_MiB  string   `yaml:"asg_cplane_max_memory_mib" module:"lt-asg"`
 }
 
 func CheckCommands() error {
@@ -136,55 +134,48 @@ func WriteModuleVars(target any, env string, zone string) error {
 	v := reflect.Indirect(reflect.ValueOf(target))
 	t := v.Type()
 
-	// 1. Create a map to hold data for each module
-	// Key: module name, Value: content for that module's env_vars.yaml
-	moduleData := make(map[string]string)
+	// Key: module name, Value: map of keys to interfaces (values)
+	moduleData := make(map[string]map[string]any)
 
 	for i := 0; i < v.NumField(); i++ {
-		fieldValue := v.Field(i).String()
-		yamlKey := t.Field(i).Tag.Get("yaml")
-		moduleName := t.Field(i).Tag.Get("module")
+		field := v.Field(i)
+		structField := t.Field(i)
+		yamlTag := structField.Tag.Get("yaml")
+		yamlKey := strings.Split(yamlTag, ",")[0]
+		moduleName := structField.Tag.Get("module")
 
 		if moduleName == "" {
-			continue // Skip fields without a module tag
+			continue
 		}
 
-		// Append this variable to the specific module's string
-		if moduleName == "root" {
-			key := yamlKey
-			if key == "aws_region" {
-				key = "region"
-			}
-			moduleData[moduleName] += fmt.Sprintf("  %s = \"%s\"\n", key, fieldValue)
-
-		} else {
-			moduleData[moduleName] += fmt.Sprintf("%s: \"%s\"\n", yamlKey, fieldValue)
+		if moduleData[moduleName] == nil {
+			moduleData[moduleName] = make(map[string]any)
 		}
+
+		key := yamlKey
+		if moduleName == "root" && key == "aws_region" {
+			key = "region"
+		}
+		moduleData[moduleName][key] = field.Interface()
 	}
 
-	// 2. Write the files to the specific region/env path
-	for module, content := range moduleData {
-		cleanZone := strings.TrimSuffix(zone, ".yaml")
+	cleanZone := strings.TrimSuffix(zone, ".yaml")
 
-		// Example Path: ../terraform/env/dev/network/env_vars.yaml
+	for module, data := range moduleData {
 		if module == "root" {
 			dirPath := fmt.Sprintf("../terraform/env/%s/%s/region.hcl", env, cleanZone)
-
-			// Ensure directory exists
 			if err := os.MkdirAll(filepath.Dir(dirPath), 0755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", filepath.Dir(dirPath), err)
 			}
 
-			file, err := os.OpenFile(dirPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				return fmt.Errorf("failed to write %s: %w", dirPath, err)
+			var hclContent strings.Builder
+			hclContent.WriteString("locals {\n")
+			for k, val := range data {
+				hclContent.WriteString(fmt.Sprintf("  %s = %s\n", k, formatHCL(val)))
 			}
-			defer file.Close()
+			hclContent.WriteString("}\n")
 
-			// Wrap in locals block
-			finalContent := fmt.Sprintf("locals {\n%s}\n", content)
-
-			if _, err := file.WriteString(finalContent); err != nil {
+			if err := os.WriteFile(dirPath, []byte(hclContent.String()), 0644); err != nil {
 				return fmt.Errorf("failed to write %s: %w", dirPath, err)
 			}
 			fmt.Printf("📂 Written vars for module [%s] to %s\n", module, dirPath)
@@ -192,19 +183,40 @@ func WriteModuleVars(target any, env string, zone string) error {
 		}
 
 		dirPath := fmt.Sprintf("../terraform/env/%s/%s/%s", env, cleanZone, module)
-
-		// Create the directory if it doesn't exist
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dirPath, err)
 		}
 
-		filePath := dirPath + "/env_vars.yaml"
-		err := os.WriteFile(filePath, []byte(content), 0644)
+		yamlData, err := yaml.Marshal(data)
 		if err != nil {
+			return fmt.Errorf("failed to marshal yaml for module %s: %w", module, err)
+		}
+
+		filePath := filepath.Join(dirPath, "env_vars.yaml")
+		if err := os.WriteFile(filePath, yamlData, 0644); err != nil {
 			return fmt.Errorf("failed to write %s: %w", filePath, err)
 		}
 		fmt.Printf("📂 Written vars for module [%s] to %s\n", module, filePath)
 	}
 
 	return nil
+}
+
+// formatHCL helper to convert Go values to HCL-compatible strings
+func formatHCL(val any) string {
+	switch v := val.(type) {
+	case string:
+		return fmt.Sprintf("\"%s\"", v)
+	case bool:
+		return fmt.Sprintf("%v", v)
+	case []string:
+		var items []string
+		for _, s := range v {
+			items = append(items, fmt.Sprintf("\"%s\"", s))
+		}
+		return fmt.Sprintf("[%s]", strings.Join(items, ", "))
+	default:
+		// Fallback for other types using JSON-like representation which HCL often accepts
+		return fmt.Sprintf("%v", v)
+	}
 }

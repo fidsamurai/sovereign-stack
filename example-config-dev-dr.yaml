@@ -9,6 +9,8 @@ private_availability_zones: ["eu-west-2a", "eu-west-2b"]
 public_availability_zones: ["eu-west-2a", "eu-west-2b"]
 private_cidr_blocks: ["192.168.1.0/24", "192.168.2.0/24"]
 public_cidr_blocks: ["192.168.3.0/24", "192.168.4.0/24"]
+nat_ami: "ami-0c55b159cbfafe1f0"
+nat_instance_type: "t2.micro"
 
 #LT + ASG defaults
 asg_cplane_key_name: "cplane"
@@ -16,4 +18,3 @@ asg_cplane_min_vcpu_count: "2"
 asg_cplane_max_vcpu_count: "4"
 asg_cplane_min_memory_mib: "2048"
 asg_cplane_max_memory_mib: "4096"
-
