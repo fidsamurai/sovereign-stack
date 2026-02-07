@@ -74,10 +74,11 @@ func CheckConfigs() error {
 		t := v.Type()
 
 		for i := 0; i < v.NumField(); i++ {
-			//fieldValue := v.Field(i).String()
+			field := v.Field(i)
+			value := field.Interface()
 			yamlTag := t.Field(i).Tag.Get("yaml")
 
-			if v.Field(i).IsZero() {
+			if value == nil || value == "" {
 				return fmt.Errorf("file %s is missing required field: %s", path, yamlTag)
 			}
 		}
