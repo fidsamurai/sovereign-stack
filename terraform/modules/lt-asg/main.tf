@@ -40,6 +40,9 @@ resource "aws_autoscaling_group" "cplane" {
     min_size = 1
     max_size = var.env_prod ? 3 : 1
     desired_capacity = 1
+    lifecycle {
+      ignore_changes = [desired_capacity]
+    }
     vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
 
     mixed_instances_policy {
@@ -82,6 +85,9 @@ resource "aws_autoscaling_group" "workers" {
     min_size = 1
     max_size = 3
     desired_capacity = 1
+    lifecycle {
+      ignore_changes = [desired_capacity, max_size]
+    }
     vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
 
     mixed_instances_policy {
