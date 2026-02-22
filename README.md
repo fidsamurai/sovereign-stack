@@ -31,7 +31,7 @@ To ensure the platform meets the high-availability and security requirements of 
   - [] S3 + CloudFront Module 
   - [] Route53 Module (With Application Recovery Controller) + Jump Server
 
-- [] Ansible playbook to automate the Control Plane setup.
+- [x] Ansible playbook to automate the Control Plane setup.
 - [x] Packer to create the AMI with Podman and K8s for the workers.
 - [] Helm chart to deploy application and monitoring.
   - [] Calico

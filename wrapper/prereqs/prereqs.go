@@ -15,6 +15,7 @@ type Config struct {
 	EnvProd                    bool     `yaml:"env_prod" module:"root"`
 	Profile                    string   `yaml:"profile" module:"root"`
 	REGION                     string   `yaml:"aws_region" module:"root"`
+	IsDr                       bool     `yaml:"is_dr" module:"root"`
 	CIDR                       string   `yaml:"cidr_block" module:"network"`
 	Private_AVAILABILITY_ZONES []string `yaml:"private_availability_zones,flow" module:"network"`
 	Public_AVAILABILITY_ZONES  []string `yaml:"public_availability_zones,flow" module:"network"`

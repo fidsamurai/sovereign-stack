@@ -14,7 +14,8 @@ func SSHKeys(firstTime bool) error {
 	}
 
 	keys := []string{"dev_cplane_pri", "dev_cplane_dr", "dev_worker_pri", "dev_worker_dr", "dev_jump_server",
-		"prod_cplane_pri", "prod_cplane_dr", "prod_worker_pri", "prod_worker_dr", "prod_jump_server"}
+		"prod_cplane_pri", "prod_cplane_dr", "prod_worker_pri", "prod_worker_dr", "prod_jump_server",
+		"dev_jump_dr", "dev_jump_pri", "prod_jump_dr", "prod_jump_pri"}
 
 	for _, key := range keys {
 		// Note: "~" shell expansion doesn't always work in exec.Command; os.UserHomeDir is safer.
@@ -81,16 +82,18 @@ func Apply(firstTime bool, modulesList []string) error {
 
 		// Plan step
 		var plan *exec.Cmd
+		planArgs := []string{"plan"}
 		if isAll {
-			plan = exec.Command("terragrunt", "plan", "-a")
-		} else {
-			plan = exec.Command("terragrunt", "plan")
+			planArgs = append(planArgs, "-a")
 		}
+		plan = exec.Command("terragrunt", planArgs...)
 		plan.Dir = workingDir
 		fmt.Printf("🔍 Running Plan for: %s...\n", module)
 
 		if out, err := plan.CombinedOutput(); err != nil {
 			return fmt.Errorf("plan failed for %s: %w\n%s", module, err, string(out))
+		} else {
+			fmt.Printf("%s\n", out)
 		}
 
 		// User Approval
@@ -104,11 +107,11 @@ func Apply(firstTime bool, modulesList []string) error {
 
 		// Apply step
 		var apply *exec.Cmd
+		applyArgs := []string{"apply", "-auto-approve"}
 		if isAll {
-			apply = exec.Command("terragrunt", "apply", "-a", "-auto-approve")
-		} else {
-			apply = exec.Command("terragrunt", "apply", "-auto-approve")
+			applyArgs = append(applyArgs, "-a")
 		}
+		apply = exec.Command("terragrunt", applyArgs...)
 		apply.Dir = workingDir
 		fmt.Printf("🏗️  Running Apply for %s...\n", module)
 

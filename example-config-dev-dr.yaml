@@ -1,6 +1,7 @@
 #Dev DR vars
 
 env_prod: false
+is_dr: true
 profile: "dev-dr"
 aws_region: "eu-west-2" 
 #Network defaults
@@ -9,8 +10,8 @@ private_availability_zones: ["eu-west-2a", "eu-west-2b"]
 public_availability_zones: ["eu-west-2a", "eu-west-2b"]
 private_cidr_blocks: ["192.168.1.0/24", "192.168.2.0/24"]
 public_cidr_blocks: ["192.168.3.0/24", "192.168.4.0/24"]
-nat_ami: "ami-0c55b159cbfafe1f0"
-nat_instance_type: "t2.micro"
+nat_ami: "ami-00c7eef10bcfe311d"
+nat_instance_type: "t4g.micro"
 
 #LT + ASG defaults
 asg_cplane_key_name: "cplane"

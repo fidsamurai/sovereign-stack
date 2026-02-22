@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#Set the EIP to the Instance
+INSTANCE_ID=$(curl -s http://instance-data.amazonaws.com/latest/meta-data/instance-id)
+aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id ${allocation_id}
+
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+DEBIAN_FRONTEND=noninteractive sudo apt install ansible git -y
+
+git clone https://github.com/sovereign-stack/terraform.git
+
+sudo dd if=/dev/zero of=/swapfile bs=1G count=2
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile

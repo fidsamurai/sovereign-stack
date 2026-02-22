@@ -69,8 +69,8 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table" "private" {
-  count = 2
+resource "aws_route_table" "private-nat-gw" {
+  count = var.nat_gw_count
   vpc_id = aws_vpc.vpc.id
   route {
     cidr_block = "0.0.0.0/0"
@@ -81,16 +81,32 @@ resource "aws_route_table" "private" {
     Name = "private-rt-${count.index}",
     Env = var.env_prod ? "prod" : "dev"
   }
+
+  depends_on = [aws_instance.nat]
 }
 
-resource "aws_route_table_association" "private" {
-  count = 2
+resource "aws_route_table" "private-nat-instance" {
+  count = var.nat_instance_count
+  vpc_id = aws_vpc.vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    network_interface_id = aws_instance.nat[0].primary_network_interface_id
+  }
+
+  tags = {
+    Name = "private-rt-${count.index}",
+    Env = var.env_prod ? "prod" : "dev"
+  }
+}
+
+resource "aws_route_table_association" "private-nat-instance" {
+  count = var.env_prod ? 0 : length(var.private_availability_zones)
   subnet_id = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
+  route_table_id = aws_route_table.private-nat-instance[0].id
 }
 
 resource "aws_nat_gateway" "nat" {
-  count = var.env_prod ? 2 : 0
+  count = var.nat_gw_count
   allocation_id = aws_eip.nat[count.index].id
   subnet_id   = aws_subnet.public[count.index].id
   tags = {
@@ -106,11 +122,16 @@ resource "aws_instance" "nat" {
   subnet_id = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.nat.id]
   source_dest_check = false
+
   tags = {
     Name = "nat-ec2",
     Env = var.env_prod ? "prod" : "dev"
   }
   user_data_base64 = base64encode(file("user_data.sh"))
+  user_data_replace_on_change = false
+  lifecycle {
+    ignore_changes = [instance_state, user_data_base64]
+  }
 }
 
 resource "aws_eip_association" "nat-instance" {

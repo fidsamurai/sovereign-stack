@@ -2,21 +2,35 @@
 
 TOKEN=$(curl -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 60" http://169.254.169.254/latest/api/token)
 KEY=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/public-keys/" | awk '{print $1}')
+IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/local-ipv4")
 
 if [[ $KEY == "cplane" ]]; then
   kctl=$(which kubectl | awk '{print $1}')
   if [[ -z $kctl ]]; then
     cat << EOF > ~/.ssh/config
 Host jump
-  HostName ${aws_instance.jump.private_ip}
-  IdentityFile ~/.ssh/jump.pem
+  HostName ${jump_ip}
+  IdentityFile ~/.ssh/${jump_pem_name}
 EOF
-    cat << EOF > ~/.ssh/jump.pem
-${jump_pem}    
+    cat << EOF > ~/.ssh/${jump_pem_name}
+${jump_pem}
 EOF 
     echo "Control Plane not installed"
-    ssh jump "sudo ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t cplane"
+    ssh jump "echo "$IP" | tee -a ~/sovereign-stack/ansible/cplane.yml"
+    ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t cplane --become"
+    token_created = $(ssh jump "cat ~/token.txt")
+    if [[ -z $token_created ]]; then
+      echo "Token not created"
+      ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t token --become"
+    fi
   else
+    cat << EOF > ~/.ssh/config
+Host jump
+  HostName ${jump_ip}
+  IdentityFile ~/.ssh/${jump_pem_name}
+EOF  
+    token = $(ssh jump "cat ~/token.txt | awk '{print $5}")
+    discovery_sha = $(ssh jump "cat ~/token.txt | awk '{print $7}")
     cat <<EOF > /tmp/join-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: JoinConfiguration
@@ -39,6 +53,13 @@ EOF
     sudo kubeadm join --config /tmp/join-config.yaml
   fi
 elif [[ $KEY == "workers" ]]; then
+  cat << EOF > ~/.ssh/config
+Host jump
+  HostName ${jump_ip}
+  IdentityFile ~/.ssh/${jump_pem_name}
+EOF
+  token = $(ssh jump "cat ~/token.txt | awk '{print $5}")
+  discovery_sha = $(ssh jump "cat ~/token.txt | awk '{print $7}")
   cat <<EOF > /tmp/join-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: JoinConfiguration

@@ -31,35 +31,39 @@ resource "aws_launch_template" "cplane" {
   iam_instance_profile = var.lt_cplane_iam_instance_profile
   key_name = cplane
   vpc_security_group_ids = [aws_security_group.cplane.id]
-  user_data = base64encode(file("${path.module}/cluster_join.sh"))
+  user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
 }
 
 resource "aws_autoscaling_group" "cplane" {
-    name = cplane
+  name = cplane
  
-    min_size = 1
-    max_size = var.env_prod ? 3 : 1
-    desired_capacity = 1
-    vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
+  min_size = 1
+  max_size = var.env_prod ? 3 : 1
+  desired_capacity = 1
+  vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
 
-    mixed_instances_policy {
-      launch_template {
-        id = aws_launch_template.cplane.id
-        version = "$Latest"
-      }
-      override {
-        instance_requirements {
-          memory_mib {
-            min = var.asg-cplane-min-memory-mib
-            max = var.asg-cplane-max-memory-mib
-          }
-          vcpu_count {
-            min = var.asg-cplane-min-vcpu-count
-            max = var.asg-cplane-max-vcpu-count
-          }
+  mixed_instances_policy {
+    launch_template {
+      id = aws_launch_template.cplane.id
+      version = "$Latest"
+    }
+    override {
+      instance_requirements {
+        memory_mib {
+          min = var.asg-cplane-min-memory-mib
+          max = var.asg-cplane-max-memory-mib
+        }
+        vcpu_count {
+          min = var.asg-cplane-min-vcpu-count
+          max = var.asg-cplane-max-vcpu-count
         }
       } 
     }
+  }
+
+  lifecycle {
+    ignore_changes = [desired_capacity, max_size]
+  }
 }
 
 resource "aws_key_pair" "workers" {
@@ -73,33 +77,94 @@ resource "aws_launch_template" "workers" {
   iam_instance_profile = var.lt_workers_iam_instance_profile
   key_name = workers
   vpc_security_group_ids = [aws_security_group.workers.id]
-  user_data = base64encode(file("${path.module}/cluster_join.sh"))
+  user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
 }
 
 resource "aws_autoscaling_group" "workers" {
-    name = workers
+  name = workers
  
-    min_size = 1
-    max_size = 3
-    desired_capacity = 1
-    vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
+  min_size = 1
+  max_size = 3
+  desired_capacity = 1
+  vpc_zone_identifier = [aws_subnet.private1.id, aws_subnet.private2.id]
 
-    mixed_instances_policy {
-      launch_template {
-        id = aws_launch_template.workers.id
-        version = "$Latest"
-      }
-      override {
-        instance_requirements {
-          memory_mib {
-            min = var.asg-workers-min-memory-mib
-            max = var.asg-workers-max-memory-mib
-          }
-          vcpu_count {
-            min = var.asg-workers-min-vcpu-count
-            max = var.asg-workers-max-vcpu-count
-          }
-        }
-      } 
+  mixed_instances_policy {
+    launch_template {
+      id = aws_launch_template.workers.id
+      version = "$Latest"
     }
+    override {
+      instance_requirements {
+        memory_mib {
+          min = var.asg-workers-min-memory-mib
+          max = var.asg-workers-max-memory-mib
+        }
+        vcpu_count {
+          min = var.asg-workers-min-vcpu-count
+          max = var.asg-workers-max-vcpu-count
+        }
+
+      }
+    } 
+  }
+
+  lifecycle {
+    ignore_changes = [desired_capacity, max_size]
+  }
+}
+
+resource "aws_key_pair" "jump" {
+  name = jump
+  public_key = file("~/.ssh/${var.env_prod ? "prod" : "dev"}-jump-${var.is_dr ? "dr" : "primary"}.pem.pub")
+}
+
+resource "aws_eip" "jump" {
+}
+
+resource "aws_launch_template" "jump" {
+  name = jump-server
+  image_id = aws_ami.ubuntu.id
+  key_name = aws_key_pair.jump.key_name
+  vpc_security_group_ids = [aws_security_group.assets.id]
+  user_data = base64encode(templatefile("jump.tftpl", {
+    allocation_id = aws_eip.jump.id
+    jump_ip = aws_eip.jump.public_ip
+    jump_pem_name = ${var.env_prod ? "prod" : "dev"}_jump_${var.is_dr ? "dr" : "primary"}
+    jump_pem = file("~/.ssh/${var.env_prod ? "prod" : "dev"}_jump_${var.is_dr ? "dr" : "primary"}.pem")
+  }))
+}
+
+
+resource "aws_autoscaling_group" "jump" {
+  name = jump-server
+ 
+  min_size = 1
+  max_size = 1
+  desired_capacity = 1
+  vpc_zone_identifier = [aws_subnet.public1.id, aws_subnet.public2.id]
+
+  mixed_instances_policy {
+    launch_template {
+      id = aws_launch_template.jump.id
+      version = "$Latest"
+    }
+
+    spot_allocation_strategy = "capacity-optimized-prioritized"
+
+    override {
+      instance_requirements {
+        cpu_manufacturers = ["amazon-web-services"]
+        memory_mib {
+          max = 4096
+        }
+        vcpu_count {
+          max = 2
+        }
+      }
+    } 
+  }
+
+  lifecycle {
+    ignore_changes = [desired_capacity, max_size]
+  }
 }

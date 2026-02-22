@@ -1,6 +1,7 @@
 #Prod PRI vars
 
 env_prod: true
+is_dr: false
 profile: "prod"
 aws_region: "eu-west-1" 
 #Network defaults

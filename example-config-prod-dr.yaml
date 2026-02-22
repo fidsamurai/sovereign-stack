@@ -1,6 +1,7 @@
 #PROD DR vars
 
 env_prod: true
+is_dr: true
 profile: "prod-dr"
 aws_region: "eu-west-2"
 #Network defaults

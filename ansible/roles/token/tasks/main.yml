@@ -1,0 +1,15 @@
+tasks:
+- name: Create K8s Token
+  command: kubeadm token create --print-join-command --ttl 0
+  register: token
+
+- name: Write Token to file
+  ansible.builtin.copy:
+    content: "{{ token.stdout }}"
+    dest: "/tmp/token.txt"
+
+- name: Save Token to jump
+  ansible.builtin.fetch:
+    src: "/tmp/token.txt"
+    dest: "~/token.txt"
+ 

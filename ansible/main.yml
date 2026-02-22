@@ -1,0 +1,14 @@
+---
+- name: Setup Cplane
+  hosts: cplane
+  become: yes
+  roles:
+    - cplane
+
+- name: Setup Token first time
+  hosts: cplane
+  become: yes
+  roles:
+    - token
+ 
+  
