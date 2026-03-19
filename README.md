@@ -27,6 +27,7 @@ To ensure the platform meets the high-availability and security requirements of 
   - [x] Network Module
   - [x] LT + ASG (Control plane + Workers)
   - [x] ALB Module (aws-load-balancer-controller via helm) 
+  - [] OIDC Provider
   - [] RDS + Self-hosted Redis + Self Hosted Elasticsearch Module
   - [] S3 + CloudFront Module 
   - [] Route53 Module (With Application Recovery Controller) + Jump Server
