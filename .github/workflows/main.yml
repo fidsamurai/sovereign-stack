@@ -20,6 +20,8 @@ jobs:
       run: |
         #Go into the cli folder
         cd wrapper
+        #Disable CGO
+        export CGO_ENABLED=0
         #Linux x86_64
         GOOS=linux GOARCH=amd64 go build -o sov-cli .
         tar -czvf sov-cli-linux-amd64.tar.gz sov-cli

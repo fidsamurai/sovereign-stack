@@ -12,21 +12,27 @@ import (
 )
 
 type Config struct {
-	EnvProd                    bool     `yaml:"env_prod" module:"root"`
-	Profile                    string   `yaml:"profile" module:"root"`
-	REGION                     string   `yaml:"aws_region" module:"root"`
-	IsDr                       bool     `yaml:"is_dr" module:"root"`
+	//root
+	EnvProd bool   `yaml:"env_prod" module:"root"`
+	Profile string `yaml:"profile" module:"root"`
+	REGION  string `yaml:"aws_region" module:"root"`
+	IsDr    bool   `yaml:"is_dr" module:"root"`
+	//network
 	CIDR                       string   `yaml:"cidr_block" module:"network"`
 	Private_AVAILABILITY_ZONES []string `yaml:"private_availability_zones,flow" module:"network"`
 	Public_AVAILABILITY_ZONES  []string `yaml:"public_availability_zones,flow" module:"network"`
 	Private_CIDR_BLOCKS        []string `yaml:"private_cidr_blocks,flow" module:"network"`
 	Public_CIDR_BLOCKS         []string `yaml:"public_cidr_blocks,flow" module:"network"`
-	NAT_AMI                    string   `yaml:"nat_ami" module:"network"`
 	NAT_INSTANCE_TYPE          string   `yaml:"nat_instance_type" module:"network"`
-	ASG_Cplane_Key_Name        string   `yaml:"asg_cplane_key_name" module:"lt-asg"`
-	ASG_Cplane_Max_VCpu_Count  string   `yaml:"asg_cplane_max_vcpu_count" module:"lt-asg"`
-	ASG_Cplane_Min_Memory_MiB  string   `yaml:"asg_cplane_min_memory_mib" module:"lt-asg"`
-	ASG_Cplane_Max_Memory_MiB  string   `yaml:"asg_cplane_max_memory_mib" module:"lt-asg"`
+	//asg
+	ASG_Cplane_Max_VCpu_Count  int `yaml:"asg-cplane-max-vcpu-count" module:"asg"`
+	ASG_Cplane_Min_VCpu_Count  int `yaml:"asg-cplane-min-vcpu-count" module:"asg"`
+	ASG_Cplane_Min_Memory_MiB  int `yaml:"asg-cplane-min-memory-mib" module:"asg"`
+	ASG_Cplane_Max_Memory_MiB  int `yaml:"asg-cplane-max-memory-mib" module:"asg"`
+	ASG_Workers_Max_VCpu_Count int `yaml:"asg-workers-max-vcpu-count" module:"asg"`
+	ASG_Workers_Min_VCpu_Count int `yaml:"asg-workers-min-vcpu-count" module:"asg"`
+	ASG_Workers_Min_Memory_MiB int `yaml:"asg-workers-min-memory-mib" module:"asg"`
+	ASG_Workers_Max_Memory_MiB int `yaml:"asg-workers-max-memory-mib" module:"asg"`
 }
 
 func CheckCommands() error {
@@ -43,12 +49,10 @@ func CheckCommands() error {
 	return nil
 }
 
-func CheckConfigs() error {
-	configs := []string{
-		"../config-dev-primary.yaml",
-		"../config-dev-dr.yaml",
-		"../config-prod-primary.yaml",
-		"../config-prod-dr.yaml",
+func CheckConfigs(envs []string) error {
+	configs := []string{}
+	for _, env := range envs {
+		configs = append(configs, fmt.Sprintf("../config-%s.yaml", env))
 	}
 
 	target := &Config{}

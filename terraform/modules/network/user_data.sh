@@ -1,27 +1,27 @@
 #!/bin/bash
-# 1. Update the system
-yum update -y
+# 1. Update the system using the modern dnf manager
+dnf update -y
 
-# 2. Enable IPv4 Forwarding in the kernel
-# This allows the instance to pass traffic from one interface/subnet to another
-echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-sysctl -p /etc/sysctl.conf
+# 2. Enable IPv4 Forwarding (The "Sovereign" way)
+# We use a dedicated file in sysctl.d to avoid overwriting system defaults
+echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/95-nat-forwarding.conf
+sysctl -p /etc/sysctl.d/95-nat-forwarding.conf
 
-# 3. Determine the primary network interface (usually eth0 or ens5)
-PRIMARY_INTERFACE=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+# 3. Dynamic Interface Detection
+# Nitro instances (T4g/T3) often use 'ens5' or 'enX0' instead of 'eth0'
+PRIMARY_INTERFACE=$(ip route | grep default | awk '{print $5}' | head -n1)
 
-# 4. Configure iptables to masquerade (SNAT) traffic 
-# This changes the source IP of outgoing private traffic to the NAT instance's IP
-yum install iptables-services -y
-systemctl enable iptables
-systemctl start iptables
+# 4. Install and Setup iptables-services
+dnf install iptables-services -y
 
-# Clean existing rules
-iptables -F
-iptables -t nat -F
+# 5. Apply NAT Rules
+# We use the -A (Append) to the POSTROUTING chain
+iptables -t nat -A POSTROUTING -o "$PRIMARY_INTERFACE" -j MASQUERADE
 
-# Apply the NAT Masquerade rule
-iptables -t nat -A POSTROUTING -o $PRIMARY_INTERFACE -j MASQUERADE
-
-# 5. Save the iptables rules so they persist after reboot
+# 6. Persistence (Crucial for AL2023)
+# AL2023 requires the service to be enabled AND the rules to be saved
+systemctl enable --now iptables
 service iptables save
+
+# 7. Verification Log (Optional - viewable in /var/log/messages)
+echo "NAT Instance configured on $PRIMARY_INTERFACE with IP Forwarding enabled." | logger -t "NAT-INIT"

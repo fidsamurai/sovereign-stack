@@ -115,13 +115,32 @@ resource "aws_nat_gateway" "nat" {
   }
 }
 
+resource "aws_key_pair" "nat" {
+  key_name = "nat"
+  public_key = file("~/.ssh/nat.pem.pub")
+}
+
+data "aws_ami" "nat" {
+  most_recent = true
+  owners = ["amazon"]
+  filter {
+    name = "name"
+    values = ["al2023-ami-2023*-arm64"]
+  }
+}
+
 resource "aws_instance" "nat" {
   count = var.env_prod ? 0 : 1
   instance_type = var.nat_instance_type
-  ami = var.nat_ami
+  ami = data.aws_ami.nat.id
   subnet_id = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.nat.id]
   source_dest_check = false
+  key_name = "nat"
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   tags = {
     Name = "nat-ec2",
@@ -156,6 +175,20 @@ resource "aws_security_group" "nat" {
     to_port = 22
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = [var.cidr_block]
+  }
+
+  ingress {
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = [var.cidr_block]
   }
 
   egress {
@@ -365,6 +398,31 @@ resource "aws_security_group" "workers" {
 
   tags = {
     Name = "workers-sg",
+    Env = var.env_prod ? "prod" : "dev"
+  }
+}
+
+resource "aws_security_group" "jump" {
+  name = "jump-sg"
+  description = "Security group for jump server"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = [var.cidr_block]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = [var.cidr_block]
+  }
+
+  tags = {
+    Name = "jump-sg",
     Env = var.env_prod ? "prod" : "dev"
   }
 }

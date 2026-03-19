@@ -13,7 +13,7 @@ func SSHKeys(firstTime bool) error {
 		return nil
 	}
 
-	keys := []string{"dev_cplane_pri", "dev_cplane_dr", "dev_worker_pri", "dev_worker_dr", "dev_jump_server",
+	keys := []string{"nat", "dev_cplane_pri", "dev_cplane_dr", "dev_worker_pri", "dev_worker_dr", "dev_jump_server",
 		"prod_cplane_pri", "prod_cplane_dr", "prod_worker_pri", "prod_worker_dr", "prod_jump_server",
 		"dev_jump_dr", "dev_jump_pri", "prod_jump_dr", "prod_jump_pri"}
 
@@ -119,6 +119,150 @@ func Apply(firstTime bool, modulesList []string) error {
 			return fmt.Errorf("apply failed for %s: %w\n%s", module, err, string(out))
 		}
 		fmt.Printf("✅ %s deployed successfully.\n", module)
+	}
+
+	return nil
+}
+
+func StateRefresh(modulesList []string) error {
+	for _, module := range modulesList {
+		if module == "" {
+			continue
+		}
+		var workingDir string
+		var isAll bool
+
+		if module == "all" {
+			workingDir = "../terraform/"
+			isAll = true
+		} else {
+			moduleSplit := strings.Split(module, "-")
+			if len(moduleSplit) != 3 {
+				return fmt.Errorf("invalid module format: '%s'. Expected env-region-component (e.g., dev-dr-network)", module)
+			}
+			workingDir = fmt.Sprintf("../terraform/env/%s/%s/%s", moduleSplit[0], moduleSplit[1], moduleSplit[2])
+			isAll = false
+		}
+
+		//Plan -refresh-only
+		statePlan := exec.Command("terragrunt", "plan", "-refresh-only")
+		statePlan.Dir = workingDir
+		fmt.Printf("🔍 Running Plan for: %s...\n", module)
+
+		if out, err := statePlan.CombinedOutput(); err != nil {
+			return fmt.Errorf("plan failed for %s: %w\n%s", module, err, string(out))
+		} else {
+			fmt.Printf("%s\n", out)
+		}
+
+		// User Approval
+		fmt.Printf("❓ Plan successful for %s. Type 'true' to apply: ", module)
+		var approval bool
+		_, err := fmt.Scanf("%t", &approval)
+		if err != nil || !approval {
+			fmt.Printf("⏭️  Skipping apply for %s (received: %v)\n", module, approval)
+			continue
+		}
+
+		// Apply step
+		var apply *exec.Cmd
+		applyArgs := []string{"apply", "-auto-approve"}
+		if isAll {
+			applyArgs = append(applyArgs, "-a")
+		}
+		apply = exec.Command("terragrunt", applyArgs...)
+		apply.Dir = workingDir
+		fmt.Printf("🏗️  Running Apply for %s...\n", module)
+
+		if out, err := apply.CombinedOutput(); err != nil {
+			return fmt.Errorf("apply failed for %s: %w\n%s", module, err, string(out))
+		}
+		fmt.Printf("✅ %s deployed successfully.\n", module)
+	}
+
+	return nil
+}
+
+func Validate(modulesList []string) error {
+	for _, module := range modulesList {
+		if module == "" {
+			continue
+		}
+		var workingDir string
+
+		if module == "all" {
+			workingDir = "../terraform/"
+		} else {
+			moduleSplit := strings.Split(module, "-")
+			if len(moduleSplit) != 3 {
+				return fmt.Errorf("invalid module format: '%s'. Expected env-region-component (e.g., dev-dr-network)", module)
+			}
+			workingDir = fmt.Sprintf("../terraform/env/%s/%s/%s", moduleSplit[0], moduleSplit[1], moduleSplit[2])
+		}
+
+		//Validate module
+		validate := exec.Command("terragrunt", "validate")
+		validate.Dir = workingDir
+		fmt.Printf("🔍 Running Validate for: %s...\n", module)
+
+		if out, err := validate.CombinedOutput(); err != nil {
+			return fmt.Errorf("validate failed for %s: %w\n%s", module, err, string(out))
+		} else {
+			fmt.Printf("%s\n", out)
+		}
+	}
+
+	return nil
+}
+
+func Destroy(modulesList []string) error {
+	for _, module := range modulesList {
+		if module == "" {
+			continue
+		}
+		var workingDir string
+
+		if module == "all" {
+			workingDir = "../terraform/"
+		} else {
+			moduleSplit := strings.Split(module, "-")
+			if len(moduleSplit) != 3 {
+				return fmt.Errorf("invalid module format: '%s'. Expected env-region-component (e.g., dev-dr-network)", module)
+			}
+			workingDir = fmt.Sprintf("../terraform/env/%s/%s/%s", moduleSplit[0], moduleSplit[1], moduleSplit[2])
+		}
+
+		//Destroy module
+		destroyPlan := exec.Command("terragrunt", "plan", "-destroy")
+		destroyPlan.Dir = workingDir
+		fmt.Printf("🔍 planning destroy for: %s...\n", module)
+
+		if out, err := destroyPlan.CombinedOutput(); err != nil {
+			return fmt.Errorf("destroy failed for %s: %w\n%s", module, err, string(out))
+		} else {
+			fmt.Printf("%s\n", out)
+		}
+
+		// User Approval
+		fmt.Printf("❓ Plan successful for %s. Type 'true' to apply: ", module)
+		var approval bool
+		_, err := fmt.Scanf("%t", &approval)
+		if err != nil || !approval {
+			fmt.Printf("⏭️  Skipping apply for %s (received: %v)\n", module, approval)
+			continue
+		}
+
+		// Apply step
+		var apply *exec.Cmd
+		applyArgs := []string{"destroy", "-auto-approve"}
+		apply = exec.Command("terragrunt", applyArgs...)
+		apply.Dir = workingDir
+		fmt.Printf("🏗️  Running Destroy for %s...\n", module)
+
+		if out, err := apply.CombinedOutput(); err != nil {
+			return fmt.Errorf("destroy failed for %s: %w\n%s", module, err, string(out))
+		}
+		fmt.Printf("✅ %s destroyed successfully.\n", module)
 	}
 
 	return nil
