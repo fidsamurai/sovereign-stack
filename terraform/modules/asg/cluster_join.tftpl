@@ -21,7 +21,7 @@ EOF
     token_created = $(ssh jump "cat ~/token.txt")
     if [[ -z $token_created ]]; then
       echo "Token not created"
-      ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t token --become"
+      ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t token --become bucket = "${var.env_prod ? "prod" : "dev"}-${var.is_dr ? "dr" : "pri"}-oidc-${var.domain}"
     fi
   else
     cat << EOF > ~/.ssh/config

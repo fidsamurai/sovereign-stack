@@ -3,21 +3,24 @@ We're looking to create a robust network architecture which would be compliant w
 Network Module ->
 ```
 Setup a new VPC with the following -
- - 2 private subnets
- - 2 public subnets
+ - Dynamic private subnets (based on provided availability zones)
+ - Dynamic public subnets (based on provided availability zones)
  - 1 internet gateway
- - 1 NAT gateway (NAT Instance for cost saving on Development environment)
- - 2 route tables
- - 2 route table associations
- - 4 security groups (Can be expanded based on other microservices)
+ - NAT configuration:
+    - Development: 1 NAT Instance for cost saving.
+    - Production: 1 NAT Gateway per AZ (Primary) or 1 NAT Gateway (DR) for reliability.
+ - Dynamic route tables and associations.
+ - Configurable security groups for ALB, RDS, Cplane, Workers, and Jump Server.
 ```
 
 LT + ASG + ALB Module ->
 ```
 Setup a new LT with the following -
- - 3 LTs
+ - 3 LTs (Cplane, Workers, Jump)
  - 3 ASGs (Attribute based instances using Graviton spot instances)
  - 1 ALB (Tied with Nginx-Ingress)
+ - Integrated OIDC Provider for IAM-based Service Accounts (via S3/CloudFront)
+ - Jump Server for secure access and cluster orchestration.
 ```
 
 RDS Module ->

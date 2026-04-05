@@ -8,6 +8,10 @@ variable "env_prod" {
   description = "Set to true for Production environments"
 }
 
+variable "region" {
+  type = string
+}
+
 variable "asg-cplane-min-memory-mib" {
     type = number
 }
@@ -58,4 +62,8 @@ variable "private_subnet_ids" {
 
 variable "public_subnet_ids" {
   type = list(string)
+}
+
+variable "final_domain" {
+  type = string
 }

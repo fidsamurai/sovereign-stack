@@ -20,6 +20,7 @@ dependency "network" {
 inputs = {
   is_dr = local.region_vars.locals.is_dr
   env_prod = local.region_vars.locals.env_prod
+  region = local.region_vars.locals.region
   asg-cplane-min-memory-mib = local.module_vars.asg-cplane-min-memory-mib
   asg-cplane-max-memory-mib = local.module_vars.asg-cplane-max-memory-mib
   asg-cplane-min-vcpu-count = local.module_vars.asg-cplane-min-vcpu-count
@@ -28,10 +29,13 @@ inputs = {
   asg-workers-max-memory-mib = local.module_vars.asg-workers-max-memory-mib
   asg-workers-min-vcpu-count = local.module_vars.asg-workers-min-vcpu-count
   asg-workers-max-vcpu-count = local.module_vars.asg-workers-max-vcpu-count
+  domain = local.module_vars.domain
+  final_domain = "${local.module_vars.env_prod ? "prod" : "dev"}-${local.region_vars.locals.is_dr ? "dr" : "pri"}-oidc-${local.module_vars.domain}"
 
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
   public_subnet_ids = dependency.network.outputs.public_subnet_ids
   cplane-sg-id = dependency.network.outputs.cplane-sg-id
   workers-sg-id = dependency.network.outputs.workers-sg-id
   jump-sg-id = dependency.network.outputs.jump-sg-id
+  
 }

@@ -25,14 +25,15 @@ type Config struct {
 	Public_CIDR_BLOCKS         []string `yaml:"public_cidr_blocks,flow" module:"network"`
 	NAT_INSTANCE_TYPE          string   `yaml:"nat_instance_type" module:"network"`
 	//asg
-	ASG_Cplane_Max_VCpu_Count  int `yaml:"asg-cplane-max-vcpu-count" module:"asg"`
-	ASG_Cplane_Min_VCpu_Count  int `yaml:"asg-cplane-min-vcpu-count" module:"asg"`
-	ASG_Cplane_Min_Memory_MiB  int `yaml:"asg-cplane-min-memory-mib" module:"asg"`
-	ASG_Cplane_Max_Memory_MiB  int `yaml:"asg-cplane-max-memory-mib" module:"asg"`
-	ASG_Workers_Max_VCpu_Count int `yaml:"asg-workers-max-vcpu-count" module:"asg"`
-	ASG_Workers_Min_VCpu_Count int `yaml:"asg-workers-min-vcpu-count" module:"asg"`
-	ASG_Workers_Min_Memory_MiB int `yaml:"asg-workers-min-memory-mib" module:"asg"`
-	ASG_Workers_Max_Memory_MiB int `yaml:"asg-workers-max-memory-mib" module:"asg"`
+	ASG_Cplane_Max_VCpu_Count  int    `yaml:"asg-cplane-max-vcpu-count" module:"asg"`
+	ASG_Cplane_Min_VCpu_Count  int    `yaml:"asg-cplane-min-vcpu-count" module:"asg"`
+	ASG_Cplane_Min_Memory_MiB  int    `yaml:"asg-cplane-min-memory-mib" module:"asg"`
+	ASG_Cplane_Max_Memory_MiB  int    `yaml:"asg-cplane-max-memory-mib" module:"asg"`
+	ASG_Workers_Max_VCpu_Count int    `yaml:"asg-workers-max-vcpu-count" module:"asg"`
+	ASG_Workers_Min_VCpu_Count int    `yaml:"asg-workers-min-vcpu-count" module:"asg"`
+	ASG_Workers_Min_Memory_MiB int    `yaml:"asg-workers-min-memory-mib" module:"asg"`
+	ASG_Workers_Max_Memory_MiB int    `yaml:"asg-workers-max-memory-mib" module:"asg"`
+	Domain                     string `yaml:"domain" module:"asg"`
 }
 
 func CheckCommands() error {

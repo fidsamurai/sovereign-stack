@@ -21,3 +21,4 @@ asg-workers-min-vcpu-count: 2
 asg-workers-max-vcpu-count: 4
 asg-workers-min-memory-mib: 2048
 asg-workers-max-memory-mib: 4096
+domain: "sovereign-stack.org" #Must be registered with Route53 before running the script.

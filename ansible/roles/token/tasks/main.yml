@@ -12,4 +12,22 @@ tasks:
   ansible.builtin.fetch:
     src: "/tmp/token.txt"
     dest: "~/token.txt"
+
+- name: Copy public key to /tmp
+  ansible.builtin.copy:
+    src: "/etc/kubernetes/pki/sa.pub"
+    dest: "/tmp/public-sa.pem"
+
+- name: Convert to PEM
+  command: openssl rsa -in /tmp/public-sa.pem -pubin -outform PEM -out /tmp/public-sa.pem
+
+- name: Convert to JWKS
+  command: jose jwk pub -i /tmp/public-sa.pem -o /tmp/public-sa.jwk
+
+- name: Upload Token to S3
+  community.aws.aws_s3:
+    bucket: "{{ bucket_name }}"
+    object: "public-sa.jwk"
+    src: "/tmp/public-sa.jwk"
+    mode: put
  

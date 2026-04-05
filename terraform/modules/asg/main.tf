@@ -113,6 +113,117 @@ resource "aws_launch_template" "cplane" {
   key_name = aws_key_pair.cplane.key_name
   vpc_security_group_ids = [var.cplane-sg-id]
   user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
+  metadata_options {
+    http_tokens = "required"
+    http_put_response_hop_limit = 1
+    http_endpoint = "enabled"  
+  }
+}
+
+data "aws_route53_zone" "main" {
+  name = var.domain
+}
+
+resource "aws_route53_record" "oidc" {
+  name = var.final_domain
+  type = "A"
+  zone_id = data.aws_route53_zone.main.zone_id
+  ttl = 300
+  alias {
+    name = aws_cloudfront_distribution.oidc.domain_name
+    zone_id = aws_cloudfront_distribution.oidc.hosted_zone_id
+  }
+}
+
+data "aws_iam_policy_document" "oidc_bucket_policy" {
+  statement {
+    sid    = "AllowCloudFrontServicePrincipalReadWrite"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    actions = [
+      "s3:GetObject"
+    ]
+
+    resources = [
+      aws_s3_bucket.oidc.arn
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.oidc.arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "oidc" {
+  bucket = aws_s3_bucket.oidc.id
+  policy = data.aws_iam_policy_document.oidc_bucket_policy.json
+}
+
+resource "aws_s3_bucket" "oidc" {
+  bucket = var.final_domain
+  region = var.region
+}
+
+resource "aws_cloudfront_origin_access_control" "oidc" {
+  name = "oidc"
+  description = "OIDC Origin Access Control"
+  signing_behavior = "always"
+  signing_protocol = "sigv4"
+}
+
+resource "aws_acm_certificate" "oidc" {
+  name = var.final_domain
+  validation_method = "DNS"
+}
+
+resource "aws_acm_certificate_validation" "oidc" {
+  certificate_arn = aws_acm_certificate.oidc.arn
+  validation_record_fqdns = [aws_route53_record.oidc.fqdn]
+}
+
+resource "aws_cloudfront_distribution" "oidc" {
+  origin {
+    domain_name = var.final_domain
+    origin_id = aws_s3_bucket.oidc.id
+    origin_access_control_id = aws_cloudfront_origin_access_control.oidc.id
+  }
+
+  enabled = true
+  comment = "Dedicated Distribution for IAM based OIDC"  
+  aliases = [var.final_domain]
+  default_cache_behavior {
+    allowed_methods = ["GET"]
+    cached_methods = ["GET"]
+    target_origin_id = aws_s3_bucket.oidc.id
+    viewer_protocol_policy = "redirect-to-https"
+    compress = true
+  }
+  viewer_certificate {
+    acm_certificate_arn = aws_acm_certificate.oidc.arn
+    ssl_support_method = "sni-only"
+  }
+}
+
+data "aws_route53_zone" "main" {
+  name = var.domain
+}
+
+resource "aws_route53_record" "oidc" {
+  name = var.final_domain
+  type = "A"
+  zone_id = data.aws_route53_zone.main.zone_id
+  ttl = 300
+  alias {
+    name = aws_cloudfront_distribution.oidc.domain_name
+    zone_id = aws_cloudfront_distribution.oidc.hosted_zone_id
+  }
 }
 
 resource "aws_autoscaling_group" "cplane" {
@@ -147,6 +258,8 @@ resource "aws_autoscaling_group" "cplane" {
   lifecycle {
     ignore_changes = [desired_capacity, max_size]
   }
+
+  depends_on = [aws_s3_bucket.oidc]
 }
 
 resource "aws_key_pair" "workers" {
@@ -160,6 +273,11 @@ resource "aws_launch_template" "workers" {
   key_name = aws_key_pair.workers.key_name
   vpc_security_group_ids = [var.workers-sg-id]
   user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
+  metadata_options {
+    http_tokens = "required"
+    http_put_response_hop_limit = 1
+    http_endpoint = "enabled"  
+  }  
 }
 
 resource "aws_autoscaling_group" "workers" {
@@ -221,6 +339,11 @@ resource "aws_launch_template" "jump" {
     jump_pem_name = aws_key_pair.jump.key_name
     jump_pem = file(pathexpand("~/.ssh/${var.env_prod ? "prod" : "dev"}_jump_${var.is_dr ? "dr" : "pri"}.pem"))
   }))
+  metadata_options {
+    http_tokens = "required"
+    http_put_response_hop_limit = 1
+    http_endpoint = "enabled"  
+  }  
 }
 
 

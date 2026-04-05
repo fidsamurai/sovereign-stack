@@ -25,12 +25,11 @@ To ensure the platform meets the high-availability and security requirements of 
 
 - [-] Terraform module based template.
   - [x] Network Module
-  - [x] LT + ASG (Control plane + Workers)
+  - [x] ASG + Jump server + OIDC (Control plane + Workers)
   - [x] ALB Module (aws-load-balancer-controller via helm) 
-  - [] OIDC Provider
   - [] RDS + Self-hosted Redis + Self Hosted Elasticsearch Module
   - [] S3 + CloudFront Module 
-  - [] Route53 Module (With Application Recovery Controller) + Jump Server
+  - [] Route53 Module (With Application Recovery Controller)
 
 - [x] Ansible playbook to automate the Control Plane setup.
 - [x] Packer to create the AMI with Podman and K8s for the workers.
@@ -57,7 +56,7 @@ To ensure the platform meets the high-availability and security requirements of 
 ```
 1. `git clone git@github.com:sovereign-stack/sovereign-stack.git`
 2. cd sovereign-stack/
-3. Move all the example-config-*.yaml to config-*.yaml #Enter all the values in the config-*.yaml file for the region and environment.
+3. Move all the example-config-*.yaml to config-*.yaml #Enter all the values in the config-<env>-<region>.yaml file for the region and environment. For example config-dev-primary.yaml.
 4. cd wrapper/
 5. Download release for the your OS and architecture from https://github.com/fidsamurai/sovereign-stack/releases and extract it.
 6. ./sov-cli prereqs #Ensure there are no errors in the output.

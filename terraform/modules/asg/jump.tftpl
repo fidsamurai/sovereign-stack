@@ -7,11 +7,15 @@ aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id ${allocatio
 sudo apt update
 sudo apt install software-properties-common
 sudo add-apt-repository --yes --update ppa:ansible/ansible
-DEBIAN_FRONTEND=noninteractive sudo apt install ansible git -y
+DEBIAN_FRONTEND=noninteractive sudo apt install ansible git jose -y
+ansible-galaxy collection install community.aws
 
-git clone https://github.com/sovereign-stack/terraform.git
+cd /home/ubuntu
+git clone https://github.com/sovereign-stack/terraform.git --branch main --depth 1
 
 sudo dd if=/dev/zero of=/swapfile bs=1G count=2
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
+
+sed -i 's/concat_bucket_name/${var.env_prod ? "prod" : "dev"}-${var.is_dr ? "dr" : "pri"}-oidc-${var.domain}"/g' ~/sovereign-stack/ansible/group_vars/_all
