@@ -259,7 +259,7 @@ resource "aws_autoscaling_group" "cplane" {
     ignore_changes = [desired_capacity, max_size]
   }
 
-  depends_on = [aws_s3_bucket.oidc]
+  depends_on = ["aws_autoscaling_group.jump", "aws_s3_bucket.oidc"]
 }
 
 resource "aws_key_pair" "workers" {
@@ -317,6 +317,8 @@ resource "aws_autoscaling_group" "workers" {
   lifecycle {
     ignore_changes = [desired_capacity, max_size]
   }
+
+  depends_on =  [aws_autoscaling_group.cplane]
 }
 
 resource "aws_key_pair" "jump" {
