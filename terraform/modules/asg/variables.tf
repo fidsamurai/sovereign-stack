@@ -64,6 +64,10 @@ variable "public_subnet_ids" {
   type = list(string)
 }
 
+variable "domain" {
+  type = string
+}
+
 variable "final_domain" {
   type = string
 }

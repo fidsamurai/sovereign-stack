@@ -120,21 +120,6 @@ resource "aws_launch_template" "cplane" {
   }
 }
 
-data "aws_route53_zone" "main" {
-  name = var.domain
-}
-
-resource "aws_route53_record" "oidc" {
-  name = var.final_domain
-  type = "A"
-  zone_id = data.aws_route53_zone.main.zone_id
-  ttl = 300
-  alias {
-    name = aws_cloudfront_distribution.oidc.domain_name
-    zone_id = aws_cloudfront_distribution.oidc.hosted_zone_id
-  }
-}
-
 data "aws_iam_policy_document" "oidc_bucket_policy" {
   statement {
     sid    = "AllowCloudFrontServicePrincipalReadWrite"
@@ -171,15 +156,26 @@ resource "aws_s3_bucket" "oidc" {
   region = var.region
 }
 
+resource "aws_s3_bucket_website_configuration" "oidc" {
+  bucket = aws_s3_bucket.oidc.id
+  index_document {
+    suffix = "index.html"
+  }
+  error_document {
+    key = "error.html"
+  }
+}
+
 resource "aws_cloudfront_origin_access_control" "oidc" {
   name = "oidc"
   description = "OIDC Origin Access Control"
   signing_behavior = "always"
   signing_protocol = "sigv4"
+  origin_access_control_origin_type = "s3"
 }
 
 resource "aws_acm_certificate" "oidc" {
-  name = var.final_domain
+  domain_name = var.final_domain
   validation_method = "DNS"
 }
 
@@ -190,7 +186,7 @@ resource "aws_acm_certificate_validation" "oidc" {
 
 resource "aws_cloudfront_distribution" "oidc" {
   origin {
-    domain_name = var.final_domain
+    domain_name = aws_s3_bucket.oidc.bucket_regional_domain_name
     origin_id = aws_s3_bucket.oidc.id
     origin_access_control_id = aws_cloudfront_origin_access_control.oidc.id
   }
@@ -209,6 +205,12 @@ resource "aws_cloudfront_distribution" "oidc" {
     acm_certificate_arn = aws_acm_certificate.oidc.arn
     ssl_support_method = "sni-only"
   }
+  restrictions {
+    geo_restriction {
+      locations = []
+      restriction_type = "none"
+    }
+  }  
 }
 
 data "aws_route53_zone" "main" {
@@ -219,10 +221,10 @@ resource "aws_route53_record" "oidc" {
   name = var.final_domain
   type = "A"
   zone_id = data.aws_route53_zone.main.zone_id
-  ttl = 300
   alias {
     name = aws_cloudfront_distribution.oidc.domain_name
     zone_id = aws_cloudfront_distribution.oidc.hosted_zone_id
+    evaluate_target_health = true
   }
 }
 
@@ -336,10 +338,7 @@ resource "aws_launch_template" "jump" {
   key_name = aws_key_pair.jump.key_name
   vpc_security_group_ids = [var.jump-sg-id]
   user_data = base64encode(templatefile("jump.tftpl", {
-    allocation_id = aws_eip.jump.id
-    jump_ip = aws_eip.jump.public_ip
-    jump_pem_name = aws_key_pair.jump.key_name
-    jump_pem = file(pathexpand("~/.ssh/${var.env_prod ? "prod" : "dev"}_jump_${var.is_dr ? "dr" : "pri"}.pem"))
+    "allocation_id" = aws_eip.jump.id
   }))
   metadata_options {
     http_tokens = "required"
