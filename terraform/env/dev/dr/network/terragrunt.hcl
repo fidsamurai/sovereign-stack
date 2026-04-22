@@ -29,6 +29,5 @@ inputs = {
   public_availability_zones = local.module_vars.public_availability_zones
   private_cidr_blocks = local.module_vars.private_cidr_blocks
   public_cidr_blocks = local.module_vars.public_cidr_blocks
-  nat_ami = local.module_vars.nat_ami
   nat_instance_type = local.module_vars.nat_instance_type
 }

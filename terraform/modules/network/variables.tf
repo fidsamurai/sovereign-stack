@@ -38,10 +38,6 @@ variable "public_cidr_blocks" {
     type = list(string)
 }
 
-variable "nat_ami" {
-    type = string
-}
-
 variable "nat_instance_type" {
     type = string
 }
