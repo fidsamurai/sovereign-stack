@@ -112,7 +112,11 @@ resource "aws_launch_template" "cplane" {
   iam_instance_profile {name = aws_iam_instance_profile.cplane.name}
   key_name = aws_key_pair.cplane.key_name
   vpc_security_group_ids = [var.cplane-sg-id]
-  user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
+  user_data = base64encode(templatefile("${path.module}/cluster_join.tftpl", {
+    jump_ip = data.aws_instance.jump.private_ip
+    jump_pem_name = aws_key_pair.jump.key_name
+    jump_pem = aws_key_pair.jump.private_key
+  }))
   metadata_options {
     http_tokens = "required"
     http_put_response_hop_limit = 1
@@ -274,7 +278,14 @@ resource "aws_launch_template" "workers" {
   image_id = data.aws_ami.ubuntu.id
   key_name = aws_key_pair.workers.key_name
   vpc_security_group_ids = [var.workers-sg-id]
-  user_data = base64encode(file("${path.module}/cluster_join.tftpl"))
+  user_data = base64encode(templatefile("${path.module}/cluster_join.tftpl", {
+    jump_ip = data.aws_instance.jump.private_ip
+    jump_pem_name = aws_key_pair.jump.key_name
+    jump_pem = aws_key_pair.jump.private_key
+    is_dr = var.is_dr
+    env_prod = var.env_prod
+    domain = var.final_domain
+  }))
   metadata_options {
     http_tokens = "required"
     http_put_response_hop_limit = 1
@@ -385,4 +396,11 @@ resource "aws_autoscaling_group" "jump" {
   lifecycle {
     ignore_changes = [desired_capacity, max_size]
   }
+}
+
+data "aws_instance" "jump" {
+  instance_tags = {
+    "aws:autoscaling:groupName" = aws_autoscaling_group.jump.name
+  }
+  instance_state = "running"
 }

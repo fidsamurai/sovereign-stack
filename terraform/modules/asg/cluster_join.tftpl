@@ -21,25 +21,25 @@ EOF
     token_created = $(ssh jump "cat ~/token.txt")
     if [[ -z $token_created ]]; then
       echo "Token not created"
-      ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t token --become bucket = "${var.env_prod ? "prod" : "dev"}-${var.is_dr ? "dr" : "pri"}-oidc-${var.domain}"
-    fi
-  else
-    cat << EOF > ~/.ssh/config
+      ssh jump "ansible-playbook -i cplane.yml main.yml -e @CPLANE.yml -t token --become bucket = "${domain}"
+    else
+      cat << EOF > ~/.ssh/config
 Host jump
   HostName ${jump_ip}
   IdentityFile ~/.ssh/${jump_pem_name}
-EOF  
-    token = $(ssh jump "cat ~/token.txt | awk '{print $5}")
-    discovery_sha = $(ssh jump "cat ~/token.txt | awk '{print $7}")
-    cat <<EOF > /tmp/join-config.yaml
+EOF
+    
+      token=$(ssh jump "cat ~/token.txt | awk '{print $5}")
+      discovery_sha=$(ssh jump "cat ~/token.txt | awk '{print $7}")
+      cat <<EOF > /tmp/join-config.yaml
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: JoinConfiguration
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
     apiServerEndpoint: "cplane.sovereignstack.com:6443"
-    token: ${token} 
-    discoveryTokenAPIServerHashes: ${discovery_sha}
+    token: $${token} 
+    discoveryTokenAPIServerHashes: $${discovery_sha}
     unsafeSkipCAVerification: false
   file:
     kubeConfigPath: ""
@@ -50,8 +50,8 @@ nodeRegistration:
   paced: ""
   taints: null
 EOF
-    sudo kubeadm join --config /tmp/join-config.yaml
-  fi
+      sudo kubeadm join --config /tmp/join-config.yaml
+    fi
 elif [[ $KEY == "workers" ]]; then
   cat << EOF > ~/.ssh/config
 Host jump
@@ -67,8 +67,8 @@ caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
     apiServerEndpoint: "cplane.sovereignstack.com:6443"
-    token: ${token} 
-    discoveryTokenAPIServerHashes: ${discovery_sha}
+    token: $${token} 
+    discoveryTokenAPIServerHashes: $${discovery_sha}
     unsafeSkipCAVerification: false
   file:
     kubeConfigPath: ""
