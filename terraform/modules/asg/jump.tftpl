@@ -11,11 +11,11 @@ DEBIAN_FRONTEND=noninteractive sudo apt install ansible git jose -y
 ansible-galaxy collection install community.aws
 
 cd /home/ubuntu
-git clone https://github.com/sovereign-stack/terraform.git --branch main --depth 1
+git clone https://github.com/fidsamurai/sovereign-stack.git --branch main --depth 1
 
 sudo dd if=/dev/zero of=/swapfile bs=1G count=2
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 
-sed -i 's/concat_bucket_name/$${var.final_domain}/g' ~/sovereign-stack/ansible/group_vars/_all
+sed -i "s/concat_bucket_name/${var.final_domain}/g" ~/sovereign-stack/ansible/group_vars/_all

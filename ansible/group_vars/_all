@@ -1,2 +1,2 @@
-keyring = /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-bucket_name = "concat_bucket_name"
+keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+bucket_name: "concat_bucket_name"

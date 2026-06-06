@@ -116,6 +116,9 @@ resource "aws_launch_template" "cplane" {
     jump_ip = data.aws_instance.jump.private_ip
     jump_pem_name = aws_key_pair.jump.key_name
     jump_pem = aws_key_pair.jump.private_key
+    domain = var.final_domain
+    is_dr = var.is_dr
+    env_prod = var.env_prod
   }))
   metadata_options {
     http_tokens = "required"
@@ -284,7 +287,7 @@ resource "aws_launch_template" "workers" {
     jump_pem = aws_key_pair.jump.private_key
     is_dr = var.is_dr
     env_prod = var.env_prod
-    domain = var.final_domain
+    final_domain = var.final_domain
   }))
   metadata_options {
     http_tokens = "required"
